@@ -7,7 +7,7 @@ Summary(uk):	Б╕бл╕отека для роботи з GIF-файлами
 Name:		giflib
 Version:	4.1.0
 %define		so_ver	4.1.0
-Release:	1
+Release:	2
 License:	X Consortium-like
 Group:		Libraries
 # not original URL, but working
@@ -59,6 +59,7 @@ Group:		Development/Libraries
 Requires:	%{name} = %{version}
 Provides:	libungif-devel
 Provides:	libungif.so
+Obsoletes:	libungif-devel
 Obsoletes:	libungif4-devel
 
 %description devel
@@ -94,6 +95,8 @@ Summary(ru):	Статические библиотеки GIF-библиотеки
 Summary(uk):	Статичн╕ б╕бл╕отеки GIF-б╕бл╕отеки
 Group:		Development/Libraries
 Requires:	%{name}-devel = %{version}
+Provides:	libungif-static
+Obsoletes:	libungif-static
 
 %description static
 Static libraries needed for developing programs that use libgif to
@@ -120,6 +123,8 @@ Summary(ru):	Программы для конвертирования и обработки GIF-файлов
 Summary(uk):	Програми для конвертування та обробки GIF-файл╕в
 Group:		Applications/Graphics
 Requires:	%{name} = %{version}
+Provides:	libungif-progs
+Obsoletes:	libungif-progs
 
 %description progs
 This package contains various programs for manipulating gif image
