@@ -13,6 +13,7 @@ Group:		Libraries
 # not original URL, but working
 Source0:	http://www.netsw.org/graphic/bitmap/formats/gif/giflib/%{name}-%{version}.tar.gz
 Source1:	http://www.mif.pg.gda.pl/homepages/ankry/man-PLD/libungif-man-pages.tar.bz2
+# Source1-md5: 580c50403ed8f7e678ed04b3e0d712f3
 Patch0:		%{name}-fixes-from-libungif.patch
 URL:		http://prtr-13.ucsc.edu/~badger/software/libungif/giflib.shtml
 BuildRequires:	XFree86-devel
