@@ -7,12 +7,13 @@ Summary(uk):	Б╕бл╕отека для роботи з GIF-файлами
 Name:		giflib
 Version:	4.1.0
 %define		so_ver	4.1.0
-Release:	2
+Release:	3
 License:	X Consortium-like
 Group:		Libraries
 # not original URL, but working
 Source0:	http://www.netsw.org/graphic/bitmap/formats/gif/giflib/%{name}-%{version}.tar.gz
 Source1:	http://www.mif.pg.gda.pl/homepages/ankry/man-PLD/libungif-man-pages.tar.bz2
+Patch0:		%{name}-fixes-from-libungif.patch
 URL:		http://prtr-13.ucsc.edu/~badger/software/libungif/giflib.shtml
 BuildRequires:	XFree86-devel
 BuildRequires:	autoconf
@@ -142,11 +143,13 @@ GIF.
 
 %prep
 %setup -q
+%patch -p1
 
 %build
 rm -f missing
 %{__libtoolize}
 aclocal
+autoheader
 %{__autoconf}
 %{__automake}
 CFLAGS="%{rpmcflags} -fwritable-strings"; export CFLAGS

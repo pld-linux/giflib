@@ -1,0 +1,4583 @@
+diff -Nur giflib-4.1.0/ChangeLog libungif-4.1.0b1/ChangeLog
+--- giflib-4.1.0/ChangeLog	Wed Feb 10 07:19:34 1999
++++ libungif-4.1.0b1/ChangeLog	Sun Feb  6 17:45:06 2000
+@@ -1,3 +1,66 @@
++2000  6 Feb Toshio Kuratomi <badger@prtr-13.ucsc.edu>
++    * configure.in: Change to using config.h
++      - Every .c file: Change to using config.h.
++    * configure.in: added check for varargs header.
++    * lib/getarg.c: Changed the ifdef USE_VARARGS to ifdef HAVE_VARARGS_H.
++      - lib/getarg.h: Ditto.
++      - lib/gif_lib.h: Ditto.
++      - lib/qprintf.h: Ditto.
++
++2000  6 Feb Toshio Kuratomi <badger@prtr-13.ucsc.edu>
++    * lib/getarg.h: Prepend an underscore to the header file define.
++    * lib/gif_lib.h: Ditto
++    * lib/gif_lib_private.h: Ditto
++    * lib/getarg.c: ifdef'd MyMalloc so it actually won't define if it already
++      is.
++
++2000 3  Feb Toshio Kuratomi <badger@prtr-13.ucsc.edu>
++    * A new cvs repository based my private tree from home.  It now goes back
++      to giflib-3.0.
++    * Updated the cvs repository to make multiple developers possible.
++    * Merge all of Michael's patches into the distribution.
++    * DEVELOPER: Updated to reflect the new versions of
++      autoconf/automake/libtool we're using.
++    * libungif.spec: Updated a few things from the latest redhat spec file.
++
++1999 5  Dec Toshio Kuratomi <badger@prtr-13.ucsc.edu>
++        * Update links to the web pages as I have reorganized them somewhat.
++        * Add the welcome2.gif to the pic directory and a test that utilizes
++          it to test-unx.
++
++1999 17 Nov Toshio Kuratomi <badger@prtr-13.ucsc.edu>
++        * New cvs Repository.  Hopefully I've got everything that was in the
++          old one.  This one is available on anonymous cvs.
++        * Update to libtool 1.3.3, automake 1.4, and autoconf 2.13
++
++1999 23 May Michael R Brown <michael@arrakeen.demon.co.uk>
++        * Lots of 'const' qualifiers added, thanks Alexis
++          Wilke for finding these.
++
++1999 22 Mar Michael R Brown <michael@arrakeen.demon.co.uk>
++        * util/gif2x11.c: Patch by (who?) to fix lots of memory leeks.
++        * util/*.c:
++          lib/dgif_lib.c:
++          Makefile.in:
++          Patch by David Kaelbling to compile on IRIX 6.x. Basically fixing
++          lots of bad/missing parameter passing to printf, scanf and similar.
++        * Added pics/welcome2.gif, from Peter Merz which provokes a bug prior
++          to patch 19990224 to do with colour map management.  There is still
++          a problem with util/gifspnge processing this image, so it will not
++          be added to test-unx yet.
++
++1999 05 Mar Michael R Brown <michael@arrakeen.demon.co.uk>
++        * lib/getarg.c: Lines 107 and 189
++          Added ifdef's to use stdarg when available. On dec-alpha the
++          default code was causing programs to crash, probably because
++          it assumes a stack that grows-up.
++
++1999 24 Feb Michael R Brown <michael@arrakeen.demon.co.uk>
++        * lib/dgif_lib.c: Lines 363 and 367
++          Bug reported by Steve Sanders, where &'s where causing the
++          memcpy to overwrite the pointers. Fixed by removing the &'s
++          so that memcpy overwrote the memory pointed to.
++
+ 1999 09 Feb Toshio Kuratomi <badger@prtr-13.ucsc.edu>
+         * Release 4.1.0
+ 
+diff -Nur giflib-4.1.0/TODO libungif-4.1.0b1/TODO
+--- giflib-4.1.0/TODO	Tue Dec 15 07:53:39 1998
++++ libungif-4.1.0b1/TODO	Fri Aug 30 23:00:50 2002
+@@ -1,3 +1,10 @@
++Make sure all malloc calls check their return value.
++
++=======
++Merge in all the changes that accumulated while I was gone.
++(Point your mail reader at libungif.mail to see these messages.)
++
++=======
+ Besides fixing bugs, what's really needed is for someone to work out how to
+ calculate a colormap for writing gifs from rgb sources.  Right now, an rgb
+ source that has only two colors (b/w) is being converted into an 8 bit gif....
+@@ -16,6 +23,8 @@
+ 
+ =======
+ Documentation needs updating to reflect additions to the API.
++(As I'm interested in experimenting with docbook, I may eventually create
++docbook documentation.)
+ 
+ =======
+ [UPDATE at bottom]
+diff -Nur giflib-4.1.0/acconfig.h libungif-4.1.0b1/acconfig.h
+--- giflib-4.1.0/acconfig.h	Thu Jan  1 01:00:00 1970
++++ libungif-4.1.0b1/acconfig.h	Sun Feb  6 17:45:06 2000
+@@ -0,0 +1,5 @@
++/* Define if you have the gl_s library (SGI GL library). */
++#undef HAVE_LIBGL_S
++
++/* Define if you have the X11 library. */
++#undef HAVE_LIBX11
+diff -Nur giflib-4.1.0/configure.in libungif-4.1.0b1/configure.in
+--- giflib-4.1.0/configure.in	Wed Feb 10 07:19:36 1999
++++ libungif-4.1.0b1/configure.in	Fri Aug 30 23:00:53 2002
+@@ -1,11 +1,16 @@
+ dnl Process this file with autoconf to produce a configure script.
+ AC_INIT(lib/dev2gif.c)
+ AM_INIT_AUTOMAKE(giflib, 4.1.0)
++AM_CONFIG_HEADER(config.h)
+ 
+ dnl Checks for programs.
+ AM_PROG_LIBTOOL
++AC_PROG_CXX
++AC_PROG_AWK
+ AC_PROG_CC
++AC_PROG_CPP
+ AC_PROG_INSTALL
++AC_PROG_LN_S
+ AC_PROG_MAKE_SET
+ AC_PROG_RANLIB
+ 
+@@ -23,15 +28,13 @@
+ fi
+ 
+ dnl I don't have this on my system.  Could someone else configure it and
+-dnl check that it works? (Need to change "main" to a function that's in the
+-dnl library, check that giflib can be reautoconf'd, configured, and
+-dnl compiled, and then remove this comment.
++dnl check that it works?
+     AC_CHECK_LIB(gl_s, main, [GL_S_LIB="${GL_S_LIB} -lgl_s $X_LIBS"
+-                             AC_DEFINE(__SGI_GL__)
++                             AC_DEFINE(HAVE_LIBGL_S)
+                  COMPILABLE_EXTRAS="${COMPILABLE_EXTRAS} gif2iris"],, $X_LIBS)
+ 
+-    AC_CHECK_LIB(X11, XOpenDisplay, [X11_LIB="${X11_LIB} $X_LIBS -lX11"
+-                                    AC_DEFINE(__X11__)
++    AC_CHECK_LIB(X11, main, [X11_LIB="${X11_LIB} $X_LIBS -lX11"
++                             AC_DEFINE(HAVE_LIBX11)
+                  COMPILABLE_EXTRAS="${COMPILABLE_EXTRAS} gif2x11"],, $X_LIBS)
+     DEVS="${GL_S_LIB} ${X11_LIB}" 
+     AC_SUBST(DEVS)
+@@ -45,6 +48,7 @@
+ dnl Checks for header files.
+ AC_HEADER_STDC
+ AC_CHECK_HEADERS(fcntl.h)
++AC_CHECK_HEADERS(stdarg.h)
+ 
+ dnl Checks for typedefs, structures, and compiler characteristics.
+ AC_C_CONST
+diff -Nur giflib-4.1.0/lib/dev2gif.c libungif-4.1.0b1/lib/dev2gif.c
+--- giflib-4.1.0/lib/dev2gif.c	Wed Feb 10 07:19:39 1999
++++ libungif-4.1.0b1/lib/dev2gif.c	Sun Feb  6 17:45:06 2000
+@@ -5,27 +5,33 @@
+ ******************************************************************************
+ * Module to dump graphic devices into a GIF file. Current supported devices: *
+ * 1. EGA, VGA, SVGA (800x600), Hercules on the IBM PC (#define __MSDOS__).   *
+-* 2. SGI 4D Irix using gl library (#define __SGI_GL__).			     *
++* 2. SGI 4D Irix using gl library (#define SGI_GL__).			     *
+ * 3. X11 using libX.a (#define __X11__).				     *
++* 4. (2 & 3 have been changed to HAVE_GL_S and HAVE_LIBX11 and should be set
++* by the configure script.)
+ ******************************************************************************
+ * History:								     *
+ * 22 Jun 89 - Version 1.0 by Gershon Elber.				     *
+ * 12 Aug 90 - Version 1.1 by Gershon Elber (added devices).		     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <dos.h>
+ #include <alloc.h>
+ #include <graphics.h>
+ #endif /* __MSDOS__ */
+ 
+-#ifdef __SGI_GL__
++#ifdef HAVE_LIBGL_S
+ #include <gl/gl.h>
+-#endif /* __SGI_GL__ */
++#endif /* HAVE_LIBGL_S */
+ 
+-#ifdef __X11__
++#ifdef HAVE_LIBX11
+ #include <X11/Xlib.h>
+-#endif /* __X11__ */
++#endif /* HAVE_LIBX11 */
+ 
+ #include <stdlib.h>
+ #include <stdio.h>
+@@ -57,14 +63,14 @@
+ 	"(C) Copyright 1997 Eric S. Raymond\n";
+ #endif /* SYSV */
+ 
+-#if defined(__SGI_GL__) || defined(__X11__)
++#if defined(HAVE_LIBGL_S) || defined(HAVE_LIBX11)
+     GifByteType *GlblGifBuffer = NULL, *GlblGifBufferPtr = NULL;
+-#endif /* __SGI_GL__ || __X11__ */
++#endif /* HAVE_LIBGL_S || HAVE_LIBX11 */
+ 
+-#ifdef __SGI_GL__
++#ifdef HAVE_LIBGL_S
+ static int QuantizeRGBBuffer(int Width, int Height, long *RGBBuffer,
+ 			     GifColorType *ColorMap, GifByteType *GIFBuffer);
+-#endif /* __SGI_GL__ */
++#endif /* HAVE_LIBGL_S */
+ 
+ static void GetScanLine(GifPixelType *ScanLine, int Y);
+ static int HandleGifError(GifFileType *GifFile);
+@@ -91,9 +97,10 @@
+ * 8. X11: Window id in ReqGraphMode1, Display id in ReqGraphMode2, Color      *
+ *    map id in  ReqGraphMode3.						      *
+ ******************************************************************************/
+-int DumpScreen2Gif(char *FileName, int ReqGraphDriver, int ReqGraphMode1,
+-	       					       int ReqGraphMode2,
+-	       					       int ReqGraphMode3)
++int DumpScreen2Gif(const char *FileName, int ReqGraphDriver,
++					 int ReqGraphMode1,
++	       				 int ReqGraphMode2,
++	       				 int ReqGraphMode3)
+ {
+     int i, j, k;
+     GifPixelType *ScanLine;
+@@ -130,16 +137,16 @@
+     	{ 255, 255, 255 },   /* 15. White */
+     };
+ #endif /* __MSDOS__ */
+-#if defined(__SGI_GL__) || defined(__X11__)
++#if defined(HAVE_LIBGL_S) || defined(HAVE_LIBX11)
+     long *RGBBuffer;
+     GifColorType ColorMap256[256];
+-#endif
+-#ifdef __X11__
++#endif /* HAVE_LIBGL_S || HAVE_LIBX11 */
++#ifdef HAVE_LIBX11
+     XImage *XImg;
+     unsigned long XPixel;
+     XColor XColorTable[256];			   /* Up to 256 colors in X. */
+     XWindowAttributes WinAttr;
+-#endif /* __X11__ */
++#endif /* HAVE_LIBX11 */
+ 
+     switch (ReqGraphDriver) {		 /* Return on non supported screens. */
+ #ifdef __MSDOS__
+@@ -222,7 +229,7 @@
+ 	    ColorMap = MakeMapObject(16, EGAColorMap);
+ 	    break;
+ #endif /* __MSDOS__ */
+-#ifdef __SGI_GL__
++#ifdef HAVE_LIBGL_S
+ 	case GIF_DUMP_SGI_WINDOW:
+ 	    winset(ReqGraphMode1);        /* Select window as active window. */
+ 	    getsize(&ScreenXMax, &ScreenYMax);
+@@ -251,8 +258,8 @@
+ 	    ColorMap = MakeMapObject(256, ColorMap256);
+ 	    free(RGBBuffer);
+ 	    break;
+-#endif /* __SGI_GL__ */
+-#ifdef __X11__
++#endif /* HAVE_LIBGL_S */
++#ifdef HAVE_LIBX11
+ 	case GIF_DUMP_X_WINDOW:
+ 	    XGetWindowAttributes((Display *) ReqGraphMode2,
+ 				 (Window) ReqGraphMode1,
+@@ -318,7 +325,7 @@
+ 	    GlblGifBufferPtr = GlblGifBuffer;
+ 	    ColorMap = MakeMapObject(256, ColorMap256);
+ 	    break;
+-#endif /* __X11__ */
++#endif /* HAVE_LIBX11 */
+ 	default:
+ 	    return -1;
+     }
+@@ -334,7 +341,7 @@
+ 	EGifPutImageDesc(GifFile, 0, 0, ScreenXMax, ScreenYMax, FALSE,
+ 			 NULL) == GIF_ERROR) {
+ 	free((char *) ScanLine);
+-#if defined(__SGI_GL__) || defined(__X11__)
++#if defined(HAVE_LIBGL_S) || defined(HAVE_LIBX11)
+ 	free((char *) GlblGifBuffer);
+ #endif
+ 	return HandleGifError(GifFile);
+@@ -344,7 +351,7 @@
+ 	GetScanLine(ScanLine, i);
+ 	if (EGifPutLine(GifFile, ScanLine, ScreenXMax) == GIF_ERROR) {
+ 	    free((char *) ScanLine);
+-#if defined(__SGI_GL__) || defined(__X11__)
++#if defined(HAVE_LIBGL_S) || defined(HAVE_LIBX11)
+ 	    free((char *) GlblGifBuffer);
+ #endif
+ 	    return HandleGifError(GifFile);
+@@ -353,20 +360,20 @@
+ 
+     if (EGifCloseFile(GifFile) == GIF_ERROR) {
+ 	free((char *) ScanLine);
+-#if defined(__SGI_GL__) || defined(__X11__)
++#if defined(HAVE_LIBGL_S) || defined(HAVE_LIBX11)
+ 	free((char *) GlblGifBuffer);
+ #endif
+ 	return HandleGifError(GifFile);
+     }
+ 
+     free((char *) ScanLine);
+-#if defined(__SGI_GL__) || defined(__X11__)
++#if defined(HAVE_LIBGL_S) || defined(HAVE_LIBX11)
+     free((char *) GlblGifBuffer);
+ #endif
+     return 0;
+ }
+ 
+-#ifdef __SGI_GL__
++#ifdef HAVE_LIBGL_S
+ /******************************************************************************
+ * Quantize the given 24 bit (8 per RGB) into 256 colors.		      *
+ ******************************************************************************/
+@@ -400,7 +407,7 @@
+ 
+     return i;			   /* Real number of colors in color table. */
+ }
+-#endif /* __SGI_GL__ */
++#endif /* HAVE_LIBGL_S */
+ 
+ /******************************************************************************
+ * Update the given scan line buffer with the pixel levels of the Y line.      *
+@@ -474,18 +481,18 @@
+ 	    }
+ 	    break;
+ #endif /* __MSDOS__ */
+-#ifdef __SGI_GL__
++#ifdef HAVE_LIBGL_S
+ 	case GIF_DUMP_SGI_WINDOW:
+ 	    memcpy(ScanLine, GlblGifBufferPtr, ScreenXMax * sizeof(GifPixelType));
+ 	    GlblGifBufferPtr -= ScreenXMax;
+ 	    break;
+-#endif /* __SGI_GL__ */
+-#ifdef __X11__
++#endif /* HAVE_LIBGL_S */
++#ifdef HAVE_LIBX11
+ 	case GIF_DUMP_X_WINDOW:
+ 	    memcpy(ScanLine, GlblGifBufferPtr, ScreenXMax * sizeof(GifPixelType));
+ 	    GlblGifBufferPtr += ScreenXMax;
+ 	    break;
+-#endif /* __X11__ */
++#endif /* HAVE_LIBX11 */
+ 	default:
+ 	    break;
+     }
+diff -Nur giflib-4.1.0/lib/dgif_lib.c libungif-4.1.0b1/lib/dgif_lib.c
+--- giflib-4.1.0/lib/dgif_lib.c	Wed Feb 10 07:19:39 1999
++++ libungif-4.1.0b1/lib/dgif_lib.c	Fri Aug 30 23:00:50 2002
+@@ -10,6 +10,9 @@
+ *  3 Sep 90 - Version 1.1 by Gershon Elber (Support for Gif89, Unique names). *
+ ******************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
+ 
+ #if defined (__MSDOS__) && !defined(__DJGPP__) && !defined(__GNUC__)
+ #include <io.h>
+@@ -21,6 +24,10 @@
+ #include <sys/stat.h>
+ #endif /* __MSDOS__ */
+ 
++#ifdef HAVE_IO_H
++#include <io.h>
++#endif
++
+ #ifndef __MSDOS__
+ #include <stdlib.h>
+ #endif
+@@ -31,9 +38,6 @@
+ #include "gif_lib_private.h"
+ 
+ #define COMMENT_EXT_FUNC_CODE	0xfe /* Extension function code for comment. */
+-#define GIF_STAMP	"GIFVER"	 /* First chars in file - GIF stamp. */
+-#define GIF_STAMP_LEN	sizeof(GIF_STAMP) - 1
+-#define GIF_VERSION_POS	3		/* Version first character in stamp. */
+ 
+ /* avoid extra function call in case we use fread (TVT) */
+ #define READ(_gif,_buf,_len)                                     \
+@@ -61,9 +65,9 @@
+     GifFileType *GifFile;
+ 
+     if ((FileHandle = open(FileName, O_RDONLY
+-#ifdef __MSDOS__
++#if defined(__MSDOS__) || defined(_OPEN_BINARY)
+ 			           | O_BINARY
+-#endif /* __MSDOS__ */
++#endif /* __MSDOS__ || _OPEN_BINARY */
+ 			                     )) == -1) {
+ 	_GifError = D_GIF_ERR_OPEN_FAILED;
+ 	return NULL;
+@@ -87,15 +91,16 @@
+     GifFilePrivateType *Private;
+     FILE *f;
+ 
+-    if ((GifFile = (GifFileType *) malloc(sizeof(GifFileType))) == NULL) {
++    GifFile = (GifFileType *) malloc(sizeof(GifFileType));
++    if (GifFile == NULL) {
+         _GifError = D_GIF_ERR_NOT_ENOUGH_MEM;
+         return NULL;
+     }
+ 
+     memset(GifFile, '\0', sizeof(GifFileType));
+ 
+-    if ((Private = (GifFilePrivateType *) malloc(sizeof(GifFilePrivateType)))
+-    == NULL) {
++    Private = (GifFilePrivateType *) malloc(sizeof(GifFilePrivateType));
++    if (Private == NULL) {
+         _GifError = D_GIF_ERR_NOT_ENOUGH_MEM;
+         free((char *) GifFile);
+         return NULL;
+@@ -103,10 +108,12 @@
+ 
+ #ifdef __MSDOS__
+     setmode(FileHandle, O_BINARY);      /* Make sure it is in binary mode. */
++#endif /* __MSDOS__ */
++
+     f = fdopen(FileHandle, "rb");           /* Make it into a stream: */
++
++#ifdef __MSDOS__
+     setvbuf(f, NULL, _IOFBF, GIF_FILE_BUFFER_SIZE);/* And inc. stream buffer.*/
+-#else
+-    f = fdopen(FileHandle, "r");           /* Make it into a stream: */
+ #endif /* __MSDOS__ */
+ 
+     GifFile->Private = (VoidPtr) Private;
+@@ -158,15 +165,16 @@
+     GifFileType *GifFile;
+     GifFilePrivateType *Private;
+ 
+-
+-    if ((GifFile = (GifFileType *) malloc(sizeof(GifFileType))) == NULL) {
++    GifFile = (GifFileType *) malloc(sizeof(GifFileType));
++    if (GifFile == NULL) {
+ 	  _GifError = D_GIF_ERR_NOT_ENOUGH_MEM;
+ 	  return NULL;
+     }
+ 
+     memset(GifFile, '\0', sizeof(GifFileType));
+ 
+-    if (!(Private = (GifFilePrivateType*) malloc(sizeof(GifFilePrivateType)))){
++    Private = (GifFilePrivateType*) malloc(sizeof(GifFilePrivateType));
++    if (!Private){
+ 	  _GifError = D_GIF_ERR_NOT_ENOUGH_MEM;
+ 	  free((char *) GifFile);
+ 	  return NULL;
+@@ -340,6 +348,11 @@
+ 	    GifFile->Image.ColorMap->Colors[i].Blue = Buf[2];
+ 	}
+     }
++    else if (GifFile->Image.ColorMap)
++    {
++        FreeMapObject(GifFile->Image.ColorMap);
++        GifFile->Image.ColorMap = NULL;
++    }
+ 
+     if (GifFile->SavedImages) {
+ 	    if ((GifFile->SavedImages = (SavedImage *)realloc(GifFile->SavedImages,
+@@ -358,14 +371,9 @@
+ 	sp = &GifFile->SavedImages[GifFile->ImageCount];
+ 	memcpy(&sp->ImageDesc, &GifFile->Image, sizeof(GifImageDesc));
+     if (GifFile->Image.ColorMap != NULL) {
+-	    sp->ImageDesc.ColorMap =
+-               (ColorMapObject *)malloc(sizeof (ColorMapObject));
+-	    memcpy(&sp->ImageDesc.ColorMap, &GifFile->Image.ColorMap,
+-               sizeof(ColorMapObject));
+-	    sp->ImageDesc.ColorMap->Colors =
+-               (GifColorType *)malloc(sizeof (GifColorType));
+-	    memcpy(&sp->ImageDesc.ColorMap->Colors,
+-               &GifFile->Image.ColorMap->Colors, sizeof(GifColorType));
++        sp->ImageDesc.ColorMap = MakeMapObject(
++                GifFile->Image.ColorMap->ColorCount,
++                GifFile->Image.ColorMap->Colors);
+     }
+ 	sp->RasterBits = (char *)NULL;
+ 	sp->ExtensionBlockCount = 0;
+@@ -490,7 +498,7 @@
+ 
+ /******************************************************************************
+ *   Get a following extension block (see GIF manual) from gif file. This      *
+-* routine sould be called until NULL Extension is returned.		      *
++* routine should be called until NULL Extension is returned.		      *
+ *   The Extension should NOT be freed by the user (not dynamically allocated).*
+ ******************************************************************************/
+ int DGifGetExtensionNext(GifFileType *GifFile, GifByteType **Extension)
+@@ -537,13 +545,29 @@
+     File = Private->File;
+ 
+     if (GifFile->Image.ColorMap)
++    {
+ 	FreeMapObject(GifFile->Image.ColorMap);
++        GifFile->Image.ColorMap = NULL;
++    }
++
+     if (GifFile->SColorMap)
++    {
+ 	FreeMapObject(GifFile->SColorMap);
++	GifFile->SColorMap = NULL;
++    }
++
+     if (Private)
++    {
+ 	free((char *) Private);
++	Private = NULL;
++    }
++
+     if (GifFile->SavedImages)
++    {
+ 	FreeSavedImages(GifFile);
++	GifFile->SavedImages = NULL;
++    }
++
+     free(GifFile);
+ 
+     if ( File && (fclose(File) != 0)) {
+@@ -940,7 +964,7 @@
+ 		ImageSize = sp->ImageDesc.Width * sp->ImageDesc.Height;
+ 
+ 		sp->RasterBits
+-		    = (GifPixelType*) malloc(ImageSize * sizeof(GifPixelType));
++		    = (char *) malloc(ImageSize * sizeof(GifPixelType));
+ 
+ 		if (DGifGetLine(GifFile, sp->RasterBits, ImageSize)
+ 		    == GIF_ERROR)
+diff -Nur giflib-4.1.0/lib/egif_lib.c libungif-4.1.0b1/lib/egif_lib.c
+--- giflib-4.1.0/lib/egif_lib.c	Wed Feb 10 07:19:39 1999
++++ libungif-4.1.0b1/lib/egif_lib.c	Fri Aug 30 23:00:50 2002
+@@ -11,6 +11,10 @@
+ * 26 Jun 96 - Version 3.0 by Eric S. Raymond (Full GIF89 support)
+ ******************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <io.h>
+ #include <alloc.h>
+@@ -19,10 +23,17 @@
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #ifdef R6000
++/* FIXME: What is sys/mode.h?  Can we substitute a check for this file rather
++ * than a check based on machine type?
++ */
+ #include <sys/mode.h>
+ #endif
+ #endif /* __MSDOS__ */
+ 
++#ifdef HAVE_IO_H
++#include <io.h>
++#endif
++
+ #include <fcntl.h>
+ #include <stdlib.h>
+ #include <stdio.h>
+@@ -30,9 +41,6 @@
+ #include "gif_lib.h"
+ #include "gif_lib_private.h"
+ 
+-#define GIF87_STAMP	"GIF87a"         /* First chars in file - GIF stamp. */
+-#define GIF89_STAMP	"GIF89a"         /* First chars in file - GIF stamp. */
+-
+ /* #define DEBUG_NO_PREFIX		          Dump only compressed data. */
+ 
+ /* Masks given codes to BitsPerPixel, to make sure all codes are in range: */
+@@ -40,7 +48,7 @@
+     0x00, 0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff
+ };
+ 
+-static char *GifVersionPrefix = GIF87_STAMP;
++static char GifVersionPrefix[GIF_STAMP_LEN + 1] = GIF87_STAMP;
+ 
+ #define WRITE(_gif,_buf,_len)   \
+   (((GifFilePrivateType*)_gif->Private)->Write ?    \
+@@ -60,7 +68,7 @@
+ *   Returns GifFileType pointer dynamically allocated which serves as the gif *
+ * info record. _GifError is cleared if succesfull.			      *
+ ******************************************************************************/
+-GifFileType *EGifOpenFileName(char *FileName, int TestExistance)
++GifFileType *EGifOpenFileName(const char *FileName, int TestExistance)
+ {
+     int FileHandle;
+     GifFileType *GifFile;
+@@ -117,10 +125,12 @@
+ 
+ #ifdef __MSDOS__
+     setmode(FileHandle, O_BINARY);      /* Make sure it is in binary mode. */
++#endif /* __MSDOS__ */
++
+     f = fdopen(FileHandle, "wb");           /* Make it into a stream: */
++
++#ifdef __MSDOS__
+     setvbuf(f, NULL, _IOFBF, GIF_FILE_BUFFER_SIZE);   /* And inc. stream buffer. */
+-#else
+-    f = fdopen(FileHandle, "w");           /* Make it into a stream: */
+ #endif /* __MSDOS__ */
+ 
+     GifFile->Private = (VoidPtr) Private;
+@@ -186,9 +190,9 @@
+ * using this version until next call to this routine. Version consists of     *
+ * 3 characters as "87a" or "89a". No test is made to validate the version.    *
+ ******************************************************************************/
+-void EGifSetGifVersion(char *Version)
++void EGifSetGifVersion(const char *Version)
+ {
+-    strncpy(&GifVersionPrefix[3], Version, 3);
++    strncpy(GifVersionPrefix + GIF_VERSION_POS, Version, 3);
+ }
+ 
+ /******************************************************************************
+@@ -197,7 +201,7 @@
+ ******************************************************************************/
+ int EGifPutScreenDesc(GifFileType *GifFile,
+ 	int Width, int Height, int ColorRes, int BackGround,
+-	ColorMapObject *ColorMap)
++	const ColorMapObject *ColorMap)
+ {
+     int i, Size;
+     GifByteType Buf[3];
+@@ -271,7 +275,7 @@
+ ******************************************************************************/
+ int EGifPutImageDesc(GifFileType *GifFile,
+ 	int Left, int Top, int Width, int Height, int Interlace,
+-	ColorMapObject *ColorMap)
++	const ColorMapObject *ColorMap)
+ {
+     int i, Size;
+     GifByteType Buf[3];
+@@ -408,17 +412,95 @@
+ /******************************************************************************
+ * Put a comment into GIF file using the GIF89 comment extension block.        *
+ ******************************************************************************/
+-int EGifPutComment(GifFileType *GifFile, char *Comment)
++int EGifPutComment(GifFileType *GifFile, const char *Comment)
+ {
+     return EGifPutExtension(GifFile, COMMENT_EXT_FUNC_CODE, strlen(Comment),
+ 								Comment);
+ }
+ 
+ /******************************************************************************
++*   Put a first extension block (see GIF manual) into gif file.  Here more    *
++* extensions can be dumped using EGifPutExtensionMid until		      *
++* EGifPutExtensionLast is invoked.					      *
++******************************************************************************/
++int EGifPutExtensionFirst(GifFileType *GifFile, int ExtCode, int ExtLen,
++							const VoidPtr Extension)
++{
++    GifByteType Buf[3];
++    GifFilePrivateType *Private = (GifFilePrivateType *) GifFile->Private;
++
++    if (!IS_WRITEABLE(Private)) {
++	/* This file was NOT open for writing: */
++	_GifError = E_GIF_ERR_NOT_WRITEABLE;
++	return GIF_ERROR;
++    }
++
++    if (ExtCode == 0)
++	fwrite(&ExtLen, 1, 1, Private->File);
++    else
++    {
++	Buf[0] = '!';
++	Buf[1] = ExtCode;
++	Buf[2] = ExtLen;
++	fwrite(Buf, 1, 3, Private->File);
++    }
++    fwrite(Extension, 1, ExtLen, Private->File);
++
++    return GIF_OK;
++}
++
++/******************************************************************************
++*   Put a middle extension block (see GIF manual) into gif file.	      *
++******************************************************************************/
++int EGifPutExtensionNext(GifFileType *GifFile, int ExtCode, int ExtLen,
++							const VoidPtr Extension)
++{
++    GifByteType Buf;
++    GifFilePrivateType *Private = (GifFilePrivateType *) GifFile->Private;
++
++    if (!IS_WRITEABLE(Private)) {
++	/* This file was NOT open for writing: */
++	_GifError = E_GIF_ERR_NOT_WRITEABLE;
++	return GIF_ERROR;
++    }
++
++    Buf = ExtLen;
++    fwrite(&Buf, 1, 1, Private->File);
++    fwrite(Extension, 1, ExtLen, Private->File);
++
++    return GIF_OK;
++}
++
++/******************************************************************************
++*   Put a last extension block (see GIF manual) into gif file.		      *
++******************************************************************************/
++int EGifPutExtensionLast(GifFileType *GifFile, int ExtCode, int ExtLen,
++							const VoidPtr Extension)
++{
++    GifByteType Buf;
++    GifFilePrivateType *Private = (GifFilePrivateType *) GifFile->Private;
++
++    if (!IS_WRITEABLE(Private)) {
++	/* This file was NOT open for writing: */
++	_GifError = E_GIF_ERR_NOT_WRITEABLE;
++	return GIF_ERROR;
++    }
++
++    Buf = ExtLen;
++    fwrite(&Buf, 1, 1, Private->File);
++    fwrite(Extension, 1, ExtLen, Private->File);
++
++    Buf = 0;
++    fwrite(&Buf, 1, 1, Private->File);
++
++    return GIF_OK;
++}
++
++/******************************************************************************
+ *   Put an extension block (see GIF manual) into gif file.		      *
+ ******************************************************************************/
+ int EGifPutExtension(GifFileType *GifFile, int ExtCode, int ExtLen,
+-							VoidPtr Extension)
++						  const VoidPtr Extension)
+ {
+     GifByteType Buf[3];
+     GifFilePrivateType *Private = (GifFilePrivateType *) GifFile->Private;
+@@ -451,7 +533,7 @@
+ * to EGifPutCodeNext, until NULL block is given.			      *
+ *   The block should NOT be freed by the user (not dynamically allocated).    *
+ ******************************************************************************/
+-int EGifPutCode(GifFileType *GifFile, int CodeSize, GifByteType *CodeBlock)
++int EGifPutCode(GifFileType *GifFile, int CodeSize, const GifByteType *CodeBlock)
+ {
+     GifFilePrivateType *Private = (GifFilePrivateType *) GifFile->Private;
+ 
+@@ -478,7 +560,7 @@
+ * called with blocks of code as read via DGifGetCode/DGifGetCodeNext. If      *
+ * given buffer pointer is NULL, empty block is written to mark end of code.   *
+ ******************************************************************************/
+-int EGifPutCodeNext(GifFileType *GifFile, GifByteType *CodeBlock)
++int EGifPutCodeNext(GifFileType *GifFile, const GifByteType *CodeBlock)
+ {
+     GifByteType Buf;
+     GifFilePrivateType *Private = (GifFilePrivateType *) GifFile->Private;
+@@ -785,7 +832,7 @@
+ int EGifSpew(GifFileType *GifFileOut)
+ {
+     int	i, j, gif89 = FALSE;
+-    char *SavedStamp;
++    char SavedStamp[GIF_STAMP_LEN + 1];
+ 
+     for (i = 0; i < GifFileOut->ImageCount; i++)
+     {
+@@ -800,8 +847,15 @@
+         }
+     }
+ 
+-    SavedStamp = GifVersionPrefix;
+-    GifVersionPrefix = gif89 ? GIF89_STAMP : GIF87_STAMP;
++    strncpy(SavedStamp, GifVersionPrefix, GIF_STAMP_LEN);
++    if (gif89)
++    {
++        strncpy(GifVersionPrefix, GIF89_STAMP, GIF_STAMP_LEN);
++    }
++    else
++    {
++        strncpy(GifVersionPrefix, GIF87_STAMP, GIF_STAMP_LEN);
++    }
+     if (EGifPutScreenDesc(GifFileOut,
+ 			  GifFileOut->SWidth,
+ 			  GifFileOut->SHeight,
+@@ -809,10 +863,10 @@
+ 			  GifFileOut->SBackGroundColor,
+ 			  GifFileOut->SColorMap) == GIF_ERROR)
+     {
+-	GifVersionPrefix = SavedStamp;
++	strncpy(GifVersionPrefix, SavedStamp, GIF_STAMP_LEN);
+ 	return(GIF_ERROR);
+     }
+-    GifVersionPrefix = SavedStamp;
++    strncpy(GifVersionPrefix, SavedStamp, GIF_STAMP_LEN);
+ 
+     for (i = 0; i < GifFileOut->ImageCount; i++)
+     {
+diff -Nur giflib-4.1.0/lib/getarg.c libungif-4.1.0b1/lib/getarg.c
+--- giflib-4.1.0/lib/getarg.c	Sun Sep  6 21:14:46 1998
++++ libungif-4.1.0b1/lib/getarg.c	Sun Feb  6 17:45:07 2000
+@@ -96,14 +96,20 @@
+ * 11 Mar 88 - Version 1.0 by Gershon Elber.				   *
+ ***************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <stdlib.h>
+ #include <alloc.h>
+ #endif /* __MSDOS__ */
+ 
+-#ifdef USE_VARARGS
+-#include <varargs.h>
+-#endif /* USE_VARARGS */
++#ifdef HAVE_VARARGS_H
++    #include <varargs.h>
++#elif defined(STDC_HEADERS)
++    #include <stdarg.h>
++#endif
+ 
+ #ifndef __MSDOS__
+ #include <stdlib.h>
+@@ -112,7 +118,9 @@
+ #include <string.h>
+ #include "getarg.h"
+ 
+-#define	MYMALLOC	   /* If no "MyAlloc" routine elsewhere define this. */
++#ifndef MYMALLOC
++#define	MYMALLOC	   /* If no "MyMalloc" routine elsewhere define this. */
++#endif
+ 
+ #define	MAX_PARAM	100	    /* maximum number of parameters allowed. */
+ #define	CTRL_STR_MAX_LEN	1024
+@@ -152,7 +160,7 @@
+ * Routine to access the	command	line argument and interpret them:	   *
+ * Return ARG_OK (0) is case of succesfull parsing, error code else...	   *
+ ***************************************************************************/
+-#ifdef USE_VARARGS
++#ifdef HAVE_VARARGS_H
+ int GAGetArgs(int va_alist, ...)
+ {
+     va_list ap;
+@@ -174,7 +182,7 @@
+     /* Note that me (for sure!) samples data beyond the current function  */
+     /* frame, but we accesson these set address only by demand.		  */
+     for (i = 1; i <= MAX_PARAM; i++) Parameters[i-1] = va_arg(ap, int *);
+-#else
++#else /* HAVE_VARARGS_H */
+ int GAGetArgs(int argc, char **argv, char *CtrlStr, ...)
+ {
+     int i, Error = FALSE, ParamCount = 0,
+@@ -183,11 +191,21 @@
+ 
+     strcpy(CtrlStrCopy, CtrlStr);
+ 
++	/** MRB - Where stdarg exists use it	**/
++#ifdef STDC_HEADERS
++   {va_list ap;
++    va_start(ap, CtrlStr);
++    for (i = 1; i <= MAX_PARAM; i++) Parameters[i-1] = va_arg(ap, int*);
++    va_end(ap);
++   }
++#else
+     /* Using base address of parameters we access other parameters addr:  */
+     /* Note that me (for sure!) samples data beyond the current function  */
+     /* frame, but we accesson these set address only by demand.		  */
+     for (i = 1; i <= MAX_PARAM; i++) Parameters[i-1] = (int *) *(i + &CtrlStr);
+-#endif /* USE_VARARG */
++#endif /* STDC_HEADERS */
++
++#endif /* HAVE_VARARGS_H */
+ 
+     --argc; argv++;	    /* Skip the program name (first in argv/c list). */
+     while (argc >= 0) {
+diff -Nur giflib-4.1.0/lib/getarg.h libungif-4.1.0b1/lib/getarg.h
+--- giflib-4.1.0/lib/getarg.h	Sun Sep  6 18:07:36 1998
++++ libungif-4.1.0b1/lib/getarg.h	Sun Feb  6 15:35:31 2000
+@@ -7,8 +7,8 @@
+ * 11 Mar 88 - Version 1.0 by Gershon Elber.				   *
+ ***************************************************************************/
+ 
+-#ifndef GET_ARG_H
+-#define GET_ARG_H
++#ifndef _GETARG_H
++#define _GETARG_H
+ 
+ #define	CMD_ERR_NotAnOpt   1			       /* None Option found. */
+ #define	CMD_ERR_NoSuchOpt  2			  /* Undefined Option Found. */
+@@ -16,13 +16,13 @@
+ #define	CMD_ERR_NumRead	   4			/* Failed on reading number. */
+ #define	CMD_ERR_AllSatis   5	       /* Fail to satisfy (must-'!') option. */
+ 
+-#ifdef USE_VARARGS
++#ifdef HAVE_VARARGS_H
+ int GAGetArgs(int va_alist, ...);
+ #else
+ int GAGetArgs(int argc, char **argv, char *CtrlStr, ...);
+-#endif /* USE_VARARGS */
++#endif /* HAVE_VARARGS_H */
+ 
+ void GAPrintErrMsg(int Error);
+ void GAPrintHowTo(char *CtrlStr);
+ 
+-#endif /* GET_ARG_H */
++#endif /* _GETARG_H */
+diff -Nur giflib-4.1.0/lib/gif_err.c libungif-4.1.0b1/lib/gif_err.c
+--- giflib-4.1.0/lib/gif_err.c	Wed Feb 10 07:19:40 1999
++++ libungif-4.1.0b1/lib/gif_err.c	Sun Feb  6 17:45:07 2000
+@@ -9,6 +9,10 @@
+ * 17 Jun 89 - Version 1.0 by Gershon Elber.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #include <stdio.h>
+ #include "gif_lib.h"
+ 
+diff -Nur giflib-4.1.0/lib/gif_font.c libungif-4.1.0b1/lib/gif_font.c
+--- giflib-4.1.0/lib/gif_font.c	Sun Sep  6 18:07:36 1998
++++ libungif-4.1.0b1/lib/gif_font.c	Fri Aug 30 23:00:50 2002
+@@ -10,6 +10,10 @@
+ * 25 Sep 92 - Draw functions added by Eric S. Raymond			     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #include <string.h>
+ #include "gif_lib.h"
+ 
+@@ -251,8 +255,8 @@
+ 		 x + border + (leadspace * GIF_FONT_WIDTH),
+ 		 y + border + (GIF_FONT_HEIGHT * i++),
+ 		 cp, fg);
+-    } while
+-	(cp = strtok((char *)NULL, "\r\n"));
++	cp = strtok((char *)NULL, "\r\n");
++    } while (cp);
+ 
+     /* outline the box */
+     DrawBox(Image,
+diff -Nur giflib-4.1.0/lib/gif_lib.h libungif-4.1.0b1/lib/gif_lib.h
+--- giflib-4.1.0/lib/gif_lib.h	Wed Feb 10 07:19:41 1999
++++ libungif-4.1.0b1/lib/gif_lib.h	Tue Feb  8 02:00:26 2000
+@@ -13,8 +13,8 @@
+ * 17 Dec 98 - Version 4.0 by Toshio Kuratomi (Fix extension writing code)     *
+ ******************************************************************************/
+ 
+-#ifndef GIF_LIB_H
+-#define GIF_LIB_H
++#ifndef _GIF_LIB_H
++#define _GIF_LIB_H
+ 
+ #define GIF_LIB_VERSION	" Version 4.0, "
+ 
+@@ -30,6 +30,12 @@
+ #define NULL		0
+ #endif /* NULL */
+ 
++#define GIF_STAMP "GIFVER"          /* First chars in file - GIF stamp.  */
++#define GIF_STAMP_LEN sizeof(GIF_STAMP) - 1
++#define GIF_VERSION_POS	3           /* Version first character in stamp. */
++#define GIF87_STAMP	"GIF87a"        /* First chars in file - GIF stamp.  */
++#define GIF89_STAMP	"GIF89a"        /* First chars in file - GIF stamp.  */
++
+ #define GIF_FILE_BUFFER_SIZE 16384  /* Files uses bigger buffers than usual. */
+ 
+ typedef	int		GifBooleanType;
+@@ -114,25 +120,31 @@
+ * (GIF_LIB file EGIF_LIB.C).						      *
+ ******************************************************************************/
+ 
+-GifFileType *EGifOpenFileName(char *GifFileName, int GifTestExistance);
++GifFileType *EGifOpenFileName(const char *GifFileName, int GifTestExistance);
+ GifFileType *EGifOpenFileHandle(int GifFileHandle);
+ GifFileType *EgifOpen(void *userPtr, OutputFunc writeFunc);
+ int EGifSpew(GifFileType *GifFile);
+-void EGifSetGifVersion(char *Version);
++void EGifSetGifVersion(const char *Version);
+ int EGifPutScreenDesc(GifFileType *GifFile,
+ 	int GifWidth, int GifHeight, int GifColorRes, int GifBackGround,
+-	ColorMapObject *GifColorMap);
++	const ColorMapObject *GifColorMap);
+ int EGifPutImageDesc(GifFileType *GifFile,
+ 	int GifLeft, int GifTop, int Width, int GifHeight, int GifInterlace,
+-	ColorMapObject *GifColorMap);
++	const ColorMapObject *GifColorMap);
+ int EGifPutLine(GifFileType *GifFile, GifPixelType *GifLine, int GifLineLen);
+ int EGifPutPixel(GifFileType *GifFile, GifPixelType GifPixel);
+-int EGifPutComment(GifFileType *GifFile, char *GifComment);
++int EGifPutComment(GifFileType *GifFile, const char *GifComment);
++int EGifPutExtensionFirst(GifFileType *GifFile, int GifExtCode, int GifExtLen,
++                           const VoidPtr GifExtension);
++int EGifPutExtensionNext(GifFileType *GifFile, int GifExtCode, int GifExtLen,
++                           const VoidPtr GifExtension);
++int EGifPutExtensionLast(GifFileType *GifFile, int GifExtCode, int GifExtLen,
++                           const VoidPtr GifExtension);
+ int EGifPutExtension(GifFileType *GifFile, int GifExtCode, int GifExtLen,
+-							VoidPtr GifExtension);
++							const VoidPtr GifExtension);
+ int EGifPutCode(GifFileType *GifFile, int GifCodeSize,
+-						   GifByteType *GifCodeBlock);
+-int EGifPutCodeNext(GifFileType *GifFile, GifByteType *GifCodeBlock);
++					  const GifByteType *GifCodeBlock);
++int EGifPutCodeNext(GifFileType *GifFile, const GifByteType *GifCodeBlock);
+ int EGifCloseFile(GifFileType *GifFile);
+ 
+ #define	E_GIF_ERR_OPEN_FAILED	1		/* And EGif possible errors. */
+@@ -197,11 +209,11 @@
+ ******************************************************************************/
+ extern int GifQuietPrint;
+ 
+-#ifdef USE_VARARGS
++#ifdef HAVE_VARARGS_H
+ extern void GifQprintf();
+ #else
+ extern void GifQprintf(char *Format, ...);
+-#endif /* USE_VARARGS */
++#endif /* HAVE_VARARGS_H */
+ 
+ /******************************************************************************
+ * O.K., here are the routines from GIF_LIB file GIF_ERR.C.		      *
+@@ -212,7 +224,7 @@
+ /******************************************************************************
+ * O.K., here are the routines from GIF_LIB file DEV2GIF.C.		      *
+ ******************************************************************************/
+-extern int DumpScreen2Gif(char *FileName,
++extern int DumpScreen2Gif(const char *FileName,
+ 			  int ReqGraphDriver,
+ 			  int ReqGraphMode1,
+ 			  int ReqGraphMode2,
+@@ -229,11 +241,12 @@
+ * Color Map handling from ALLOCGIF.C					      *
+ ******************************************************************************/
+ 
+-extern ColorMapObject *MakeMapObject(int ColorCount, GifColorType *ColorMap);
++extern ColorMapObject *MakeMapObject(int ColorCount, const GifColorType *ColorMap);
+ extern void FreeMapObject(ColorMapObject *Object);
+-extern ColorMapObject *UnionColorMap(ColorMapObject *ColorIn1,
+-			      ColorMapObject *ColorIn2,
+-			      GifPixelType ColorTransIn2[]);
++extern ColorMapObject *UnionColorMap(
++				const ColorMapObject *ColorIn1,
++				const ColorMapObject *ColorIn2,
++				GifPixelType ColorTransIn2[]);
+ extern int BitSize(int n);
+ 
+ /******************************************************************************
+@@ -265,7 +278,7 @@
+ extern int AddExtensionBlock(SavedImage *New, int Len, char ExtData[]);
+ extern void FreeExtension(SavedImage *Image);
+ 
+-extern SavedImage *MakeSavedImage(GifFileType *GifFile, SavedImage *CopyFrom);
++extern SavedImage *MakeSavedImage(GifFileType *GifFile, const SavedImage *CopyFrom);
+ extern void FreeSavedImages(GifFileType *GifFile);
+ 
+ /******************************************************************************
+@@ -298,4 +311,4 @@
+ 		     const int bg,
+ 		     const int fg);
+ 
+-#endif /* GIF_LIB_H */
++#endif /* _GIF_LIB_H */
+diff -Nur giflib-4.1.0/lib/gif_lib_private.h libungif-4.1.0b1/lib/gif_lib_private.h
+--- giflib-4.1.0/lib/gif_lib_private.h	Wed Feb 10 07:19:41 1999
++++ libungif-4.1.0b1/lib/gif_lib_private.h	Sun Feb  6 15:32:31 2000
+@@ -1,5 +1,5 @@
+-#ifndef GIF_LIB_PRIVATE_H
+-#define GIF_LIB_PRIVATE_H
++#ifndef _GIF_LIB_PRIVATE_H
++#define _GIF_LIB_PRIVATE_H
+ 
+ #include "gif_lib.h"
+ #include "gif_hash.h"
+@@ -63,4 +61,4 @@
+ 	"(C) Copyright 1997 Eric S. Raymond\n";
+ #endif /* SYSV */
+ 
+-#endif /* GIF_LIB_PRIVATE_H */
++#endif /* _GIF_LIB_PRIVATE_H */
+diff -Nur giflib-4.1.0/lib/gifalloc.c libungif-4.1.0b1/lib/gifalloc.c
+--- giflib-4.1.0/lib/gifalloc.c	Tue Dec 15 04:56:40 1998
++++ libungif-4.1.0b1/lib/gifalloc.c	Fri Aug 30 23:00:50 2002
+@@ -9,6 +9,11 @@
+ * History:								     *
+ * 15 Sep 92 - Version 1.0 by Eric Raymond.				     *
+ *****************************************************************************/
++
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #include <stdlib.h>
+ #include <stdio.h>
+ #include <string.h>
+@@ -36,7 +41,7 @@
+ * Color map object functions						      *
+ ******************************************************************************/
+ 
+-ColorMapObject *MakeMapObject(int ColorCount, GifColorType *ColorMap)
++ColorMapObject *MakeMapObject(int ColorCount, const GifColorType *ColorMap)
+ /*
+  * Allocate a color map of given size; initialize with contents of
+  * ColorMap if that pointer is non-NULL.
+@@ -96,8 +101,8 @@
+ #endif /* DEBUG */
+ 
+ ColorMapObject *UnionColorMap(
+-			 ColorMapObject *ColorIn1,
+-			 ColorMapObject *ColorIn2,
++			 const ColorMapObject *ColorIn1,
++			 const ColorMapObject *ColorIn2,
+ 			 GifPixelType ColorTransIn2[])
+ /*
+  * Compute the union of two given color maps and return it.  If result can't 
+@@ -133,7 +138,7 @@
+      */
+     while (ColorIn1->Colors[CrntSlot-1].Red == 0
+ 	   && ColorIn1->Colors[CrntSlot-1].Green == 0
+-	   && ColorIn1->Colors[CrntSlot-1].Red == 0)
++	   && ColorIn1->Colors[CrntSlot-1].Blue == 0)
+ 	CrntSlot--;
+ 
+     /* Copy ColorIn2 to ColorUnionSize (use old colors if they exist): */
+@@ -253,7 +258,7 @@
+ /******************************************************************************
+ * Image block allocation functions					      *
+ ******************************************************************************/
+-SavedImage *MakeSavedImage(GifFileType *GifFile, SavedImage *CopyFrom)
++SavedImage *MakeSavedImage(GifFileType *GifFile, const SavedImage *CopyFrom)
+ /*
+  * Append an image block to the SavedImages array  
+  */
+diff -Nur giflib-4.1.0/lib/qprintf.c libungif-4.1.0b1/lib/qprintf.c
+--- giflib-4.1.0/lib/qprintf.c	Sun Sep  6 18:07:36 1998
++++ libungif-4.1.0b1/lib/qprintf.c	Sun Feb  6 17:45:07 2000
+@@ -10,13 +10,17 @@
+ * 12 May 91 - Version 1.0 by Gershon Elber.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #include <stdio.h>
+ 
+-#ifdef USE_VARARGS
++#ifdef HAVE_VARARGS_H
+ #include <varargs.h>
+ #else
+ #include <stdarg.h>
+-#endif /* USE_VARARGS */
++#endif /* HAVE_VARARGS_H */
+ 
+ #include "gif_lib.h"
+ 
+@@ -29,7 +33,7 @@
+ /*****************************************************************************
+ * Same as fprintf to stderr but with optional print.			     *
+ *****************************************************************************/
+-#ifdef USE_VARARGS
++#ifdef HAVE_VARARGS_H
+ void GifQprintf(int va_alist)
+ {
+     char *Format, Line[128];
+@@ -44,7 +48,7 @@
+     va_list ArgPtr;
+ 
+     va_start(ArgPtr, Format);
+-#endif /* USE_VARARGS */
++#endif /* HAVE_VARARGS_H */
+ 
+     if (GifQuietPrint) return;
+ 
+diff -Nur giflib-4.1.0/lib/quantize.c libungif-4.1.0b1/lib/quantize.c
+--- giflib-4.1.0/lib/quantize.c	Wed Feb 10 07:19:41 1999
++++ libungif-4.1.0b1/lib/quantize.c	Sun Feb  6 17:45:07 2000
+@@ -12,6 +12,10 @@
+ * 5 Jan 90 - Version 1.0 by Gershon Elber.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <dos.h>
+ #include <alloc.h>
+diff -Nur giflib-4.1.0/util/Makefile.am libungif-4.1.0b1/util/Makefile.am
+--- giflib-4.1.0/util/Makefile.am	Wed Feb 10 07:19:44 1999
++++ libungif-4.1.0b1/util/Makefile.am	Sat Feb  5 09:31:41 2000
+@@ -2,7 +2,7 @@
+ bin_PROGRAMS = gif2epsn gif2ps gif2rgb gifasm gifbg gifclip gifcomb \
+     giffix gifflip gifhisto gifinter gifinto gifovly gifpos gifrsize \
+     giftext gifwedge raw2gif rgb2gif text2gif gifspnge giffiltr \
+-    icon2gif gifcolor @COMPILABLE_EXTRAS@
++    icon2gif gifcolor gifinfo @COMPILABLE_EXTRAS@
+ bin_SCRIPTS = gifcompose gifburst
+ EXTRA_PROGRAMS = gif2rle rle2gif gif2iris gif2x11 gifclrmp gifrotat
+ 
+@@ -30,6 +30,7 @@
+ gifrotat_SOURCES = gifrotat.c
+ gifrotat_LDADD = $(LDADD) @MATH_LIB@
+ 
++gifinfo_SOURCES = gifinfo.c
+ gif2epsn_SOURCES = gif2epsn.c
+ gif2ps_SOURCES = gif2ps.c
+ gif2rgb_SOURCES = gif2rgb.c
+diff -Nur giflib-4.1.0/util/gif2epsn.c libungif-4.1.0b1/util/gif2epsn.c
+--- giflib-4.1.0/util/gif2epsn.c	Sun Sep  6 21:15:27 1998
++++ libungif-4.1.0b1/util/gif2epsn.c	Tue Feb  8 02:00:26 2000
+@@ -19,6 +19,10 @@
+ * 22 Dec 89 - Fix problems with const strings been modified (Version 1.1).   *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <graphics.h>
+ #include <stdlib.h>
+@@ -115,7 +119,7 @@
+ /******************************************************************************
+ * Interpret the command line and scan the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	i, j, Error, NumFiles, Size, Row, Col, Width, Height, ExtCode, Count;
+     GifRecordType RecordType;
+@@ -136,13 +140,13 @@
+ 	else if (NumFiles > 1)
+ 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     if (!PrinterFlag) PrinterName = "";
+@@ -167,7 +171,7 @@
+     if (NumFiles == 1) {
+ 	if ((GifFile = DGifOpenFileName(*FileName)) == NULL) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+     }
+     else {
+@@ -178,7 +182,7 @@
+ #endif /* __MSDOS__ */
+ 	if ((GifFile = DGifOpenFileHandle(0)) == NULL) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+     }
+ 
+@@ -209,13 +213,13 @@
+     do {
+ 	if (DGifGetRecordType(GifFile, &RecordType) == GIF_ERROR) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+ 	switch (RecordType) {
+ 	    case IMAGE_DESC_RECORD_TYPE:
+ 		if (DGifGetImageDesc(GifFile) == GIF_ERROR) {
+ 		    PrintGifError();
+-		    exit(-1);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		Row = GifFile->Image.Top; /* Image Position relative to Screen. */
+ 		Col = GifFile->Image.Left;
+@@ -225,8 +229,8 @@
+ 		    PROGRAM_NAME, ++ImageNum, Col, Row, Width, Height);
+ 		if (GifFile->Image.Left + GifFile->Image.Width > GifFile->SWidth ||
+ 		   GifFile->Image.Top + GifFile->Image.Height > GifFile->SHeight) {
+-		    fprintf(stderr, "Image %d is not confined to screen dimension, aborted.\n");
+-		    exit(-2);
++		    fprintf(stderr, "Image %d is not confined to screen dimension, aborted.\n",ImageNum);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		if (GifFile->Image.Interlace) {
+ 		    /* Need to perform 4 passes on the images: */
+@@ -237,7 +241,7 @@
+ 			    if (DGifGetLine(GifFile, &ScreenBuffer[j][Col],
+ 				Width) == GIF_ERROR) {
+ 				PrintGifError();
+-				exit(-1);
++				exit(EXIT_FAILURE);
+ 			    }
+ 			}
+ 		}
+@@ -247,7 +251,7 @@
+ 			if (DGifGetLine(GifFile, &ScreenBuffer[Row++][Col],
+ 				Width) == GIF_ERROR) {
+ 			    PrintGifError();
+-			    exit(-1);
++			    exit(EXIT_FAILURE);
+ 			}
+ 		    }
+ 		}
+@@ -256,12 +260,12 @@
+ 		/* Skip any extension blocks in file: */
+ 		if (DGifGetExtension(GifFile, &ExtCode, &Extension) == GIF_ERROR) {
+ 		    PrintGifError();
+-		    exit(-1);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		while (Extension != NULL) {
+ 		    if (DGifGetExtensionNext(GifFile, &Extension) == GIF_ERROR) {
+ 			PrintGifError();
+-			exit(-1);
++			exit(EXIT_FAILURE);
+ 		    }
+ 		}
+ 		break;
+@@ -281,8 +285,10 @@
+ 
+     if (DGifCloseFile(GifFile) == GIF_ERROR) {
+ 	PrintGifError();
+-	exit(-1);
++	exit(EXIT_FAILURE);
+     }
++
++    return 0;
+ }
+ 
+ /*****************************************************************************
+@@ -387,19 +393,27 @@
+ #endif /* __MSDOS__ */
+ 
+     if (!DirectPrint) {
+-#ifdef __MSDOS__
+ 	if (strlen(PrinterName) == 0) {
++#ifdef __MSDOS__
+ 	    setmode(1, O_BINARY);	  /* Make sure it is in binary mode. */
++#endif
+ 	    Prt = stdout;
+ 	}
+-	else if ((Prt = fopen(PrinterName, "wb")) == NULL ||
+-		 setvbuf(Prt, NULL, _IOFBF, GIF_FILE_BUFFER_SIZE))
+-#else
+-	if (strlen(PrinterName) == 0)
+-	    Prt = stdout;
+-	else if ((Prt = fopen(PrinterName, "w")) == NULL)
+-#endif /* __MSDOS__ */
+-	    GIF_EXIT("Failed to open output (printer) file.");
++	else
++        {
++                Prt = fopen(PrinterName, "wb");
++                if (Prt == NULL)
++                {
++                    GIF_EXIT("Failed to open output (printer) file.");
++                }
++
++#ifdef __MSDOS__
++                if (setvbuf(Prt, NULL, _IOFBF, GIF_FILE_BUFFER_SIZE))
++                {
++                    GIF_EXIT("Failed to open output (printer) file.");
++                }
++#endif
++        }
+     }
+ 
+     if ((EpsonBuffer = (GifByteType *) malloc(ScreenWidth)) == NULL)
+diff -Nur giflib-4.1.0/util/gif2iris.c libungif-4.1.0b1/util/gif2iris.c
+--- giflib-4.1.0/util/gif2iris.c	Sun Sep  6 18:07:37 1998
++++ libungif-4.1.0b1/util/gif2iris.c	Mon Feb  7 05:54:21 2000
+@@ -14,6 +14,10 @@
+ * 13 mar 90 - Version 1.0 by Gershon Elber.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <graphics.h>
+ #include <stdlib.h>
+@@ -81,7 +85,7 @@
+ /******************************************************************************
+ * Interpret the command line and scan the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	i, j, Error, NumFiles, ImageNum = 0, Size, Row, Col, Width, Height,
+         ExtCode, Count;
+@@ -101,19 +105,19 @@
+ 	else if (NumFiles > 1)
+ 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     if (NumFiles == 1) {
+ 	if ((GifFile = DGifOpenFileName(*FileName)) == NULL) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+     }
+     else {
+@@ -124,7 +128,7 @@
+ #endif /* __MSDOS__ */
+ 	if ((GifFile = DGifOpenFileHandle(0)) == NULL) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+     }
+ 
+@@ -155,13 +159,13 @@
+     do {
+ 	if (DGifGetRecordType(GifFile, &RecordType) == GIF_ERROR) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+ 	switch (RecordType) {
+ 	    case IMAGE_DESC_RECORD_TYPE:
+ 		if (DGifGetImageDesc(GifFile) == GIF_ERROR) {
+ 		    PrintGifError();
+-		    exit(-1);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		Row = GifFile->Image.Top; /* Image Position relative to Screen. */
+ 		Col = GifFile->Image.Left;
+@@ -172,7 +176,7 @@
+ 		if (GifFile->Image.Left + GifFile->Image.Width > GifFile->SWidth ||
+ 		   GifFile->Image.Top + GifFile->Image.Height > GifFile->SHeight) {
+ 		    fprintf(stderr, "Image %d is not confined to screen dimension, aborted.\n");
+-		    exit(-2);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		if (GifFile->Image.Interlace) {
+ 		    /* Need to perform 4 passes on the images: */
+@@ -183,7 +187,7 @@
+ 			    if (DGifGetLine(GifFile, &ScreenBuffer[j][Col],
+ 				Width) == GIF_ERROR) {
+ 				PrintGifError();
+-				exit(-1);
++				exit(EXIT_FAILURE);
+ 			    }
+ 			}
+ 		}
+@@ -193,7 +197,7 @@
+ 			if (DGifGetLine(GifFile, &ScreenBuffer[Row++][Col],
+ 				Width) == GIF_ERROR) {
+ 			    PrintGifError();
+-			    exit(-1);
++			    exit(EXIT_FAILURE);
+ 			}
+ 		    }
+ 		}
+@@ -202,12 +206,12 @@
+ 		/* Skip any extension blocks in file: */
+ 		if (DGifGetExtension(GifFile, &ExtCode, &Extension) == GIF_ERROR) {
+ 		    PrintGifError();
+-		    exit(-1);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		while (Extension != NULL) {
+ 		    if (DGifGetExtensionNext(GifFile, &Extension) == GIF_ERROR) {
+ 			PrintGifError();
+-			exit(-1);
++			exit(EXIT_FAILURE);
+ 		    }
+ 		}
+ 		break;
+@@ -230,8 +234,10 @@
+ 
+     if (DGifCloseFile(GifFile) == GIF_ERROR) {
+ 	PrintGifError();
+-	exit(-1);
++	exit(EXIT_FAILURE);
+     }
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+diff -Nur giflib-4.1.0/util/gif2ps.c libungif-4.1.0b1/util/gif2ps.c
+--- giflib-4.1.0/util/gif2ps.c	Sun Sep  6 21:15:27 1998
++++ libungif-4.1.0b1/util/gif2ps.c	Mon Feb  7 05:54:21 2000
+@@ -18,6 +18,10 @@
+ * 22 Dec 89 - Version 1.0 by Gershon Elber.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <graphics.h>
+ #include <stdlib.h>
+@@ -99,7 +103,7 @@
+ /******************************************************************************
+ * Interpret the command line and scan the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	i, j, Error, NumFiles, Size, Row, Col, Width, Height, ExtCode, Count;
+     GifRecordType RecordType;
+@@ -119,13 +123,13 @@
+ 	else if (NumFiles > 1)
+ 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     if (ForceXFlag)
+@@ -138,7 +142,7 @@
+     if (NumFiles == 1) {
+ 	if ((GifFile = DGifOpenFileName(*FileName)) == NULL) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+     }
+     else {
+@@ -149,7 +153,7 @@
+ #endif /* __MSDOS__ */
+ 	if ((GifFile = DGifOpenFileHandle(0)) == NULL) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+     }
+ 
+@@ -180,13 +184,13 @@
+     do {
+ 	if (DGifGetRecordType(GifFile, &RecordType) == GIF_ERROR) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+ 	switch (RecordType) {
+ 	    case IMAGE_DESC_RECORD_TYPE:
+ 		if (DGifGetImageDesc(GifFile) == GIF_ERROR) {
+ 		    PrintGifError();
+-		    exit(-1);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		Row = GifFile->Image.Top; /* Image Position relative to Screen. */
+ 		Col = GifFile->Image.Left;
+@@ -196,8 +200,8 @@
+ 		    PROGRAM_NAME, ++ImageNum, Col, Row, Width, Height);
+ 		if (GifFile->Image.Left + GifFile->Image.Width > GifFile->SWidth ||
+ 		   GifFile->Image.Top + GifFile->Image.Height > GifFile->SHeight) {
+-		    fprintf(stderr, "Image %d is not confined to screen dimension, aborted.\n");
+-		    exit(-2);
++		    fprintf(stderr, "Image %d is not confined to screen dimension, aborted.\n",ImageNum);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		if (GifFile->Image.Interlace) {
+ 		    /* Need to perform 4 passes on the images: */
+@@ -208,7 +212,7 @@
+ 			    if (DGifGetLine(GifFile, &ScreenBuffer[j][Col],
+ 				Width) == GIF_ERROR) {
+ 				PrintGifError();
+-				exit(-1);
++				exit(EXIT_FAILURE);
+ 			    }
+ 			}
+ 		}
+@@ -218,7 +222,7 @@
+ 			if (DGifGetLine(GifFile, &ScreenBuffer[Row++][Col],
+ 				Width) == GIF_ERROR) {
+ 			    PrintGifError();
+-			    exit(-1);
++			    exit(EXIT_FAILURE);
+ 			}
+ 		    }
+ 		}
+@@ -227,12 +231,12 @@
+ 		/* Skip any extension blocks in file: */
+ 		if (DGifGetExtension(GifFile, &ExtCode, &Extension) == GIF_ERROR) {
+ 		    PrintGifError();
+-		    exit(-1);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		while (Extension != NULL) {
+ 		    if (DGifGetExtensionNext(GifFile, &Extension) == GIF_ERROR) {
+ 			PrintGifError();
+-			exit(-1);
++			exit(EXIT_FAILURE);
+ 		    }
+ 		}
+ 		break;
+@@ -253,8 +257,10 @@
+ 
+     if (DGifCloseFile(GifFile) == GIF_ERROR) {
+ 	PrintGifError();
+-	exit(-1);
++	exit(EXIT_FAILURE);
+     }
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+diff -Nur giflib-4.1.0/util/gif2rgb.c libungif-4.1.0b1/util/gif2rgb.c
+--- giflib-4.1.0/util/gif2rgb.c	Sun Sep  6 21:15:28 1998
++++ libungif-4.1.0b1/util/gif2rgb.c	Mon Feb  7 20:24:06 2000
+@@ -14,6 +14,10 @@
+ * 5 Jan 90 - Version 1.0 by Gershon Elber.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <graphics.h>
+ #include <stdlib.h>
+@@ -79,7 +83,7 @@
+ /******************************************************************************
+ * Interpret the command line and scan the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	i, j, Error, NumFiles, Size, Row, Col, Width, Height, ExtCode, Count,
+ 	OutFileFlag = FALSE;
+@@ -99,13 +103,13 @@
+ 	else if (NumFiles > 1)
+ 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     if (!OutFileFlag) OutFileName = NULL;
+@@ -113,7 +117,7 @@
+     if (NumFiles == 1) {
+ 	if ((GifFile = DGifOpenFileName(*FileName)) == NULL) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+     }
+     else {
+@@ -124,7 +128,7 @@
+ #endif /* __MSDOS__ */
+ 	if ((GifFile = DGifOpenFileHandle(0)) == NULL) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+     }
+ 
+@@ -155,13 +159,13 @@
+     do {
+ 	if (DGifGetRecordType(GifFile, &RecordType) == GIF_ERROR) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+ 	switch (RecordType) {
+ 	    case IMAGE_DESC_RECORD_TYPE:
+ 		if (DGifGetImageDesc(GifFile) == GIF_ERROR) {
+ 		    PrintGifError();
+-		    exit(-1);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		Row = GifFile->Image.Top; /* Image Position relative to Screen. */
+ 		Col = GifFile->Image.Left;
+@@ -171,8 +175,8 @@
+ 		    PROGRAM_NAME, ++ImageNum, Col, Row, Width, Height);
+ 		if (GifFile->Image.Left + GifFile->Image.Width > GifFile->SWidth ||
+ 		   GifFile->Image.Top + GifFile->Image.Height > GifFile->SHeight) {
+-		    fprintf(stderr, "Image %d is not confined to screen dimension, aborted.\n");
+-		    exit(-2);
++		    fprintf(stderr, "Image %d is not confined to screen dimension, aborted.\n",ImageNum);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		if (GifFile->Image.Interlace) {
+ 		    /* Need to perform 4 passes on the images: */
+@@ -183,7 +187,7 @@
+ 			    if (DGifGetLine(GifFile, &ScreenBuffer[j][Col],
+ 				Width) == GIF_ERROR) {
+ 				PrintGifError();
+-				exit(-1);
++				exit(EXIT_FAILURE);
+ 			    }
+ 			}
+ 		}
+@@ -193,7 +197,7 @@
+ 			if (DGifGetLine(GifFile, &ScreenBuffer[Row++][Col],
+ 				Width) == GIF_ERROR) {
+ 			    PrintGifError();
+-			    exit(-1);
++			    exit(EXIT_FAILURE);
+ 			}
+ 		    }
+ 		}
+@@ -202,12 +206,12 @@
+ 		/* Skip any extension blocks in file: */
+ 		if (DGifGetExtension(GifFile, &ExtCode, &Extension) == GIF_ERROR) {
+ 		    PrintGifError();
+-		    exit(-1);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		while (Extension != NULL) {
+ 		    if (DGifGetExtensionNext(GifFile, &Extension) == GIF_ERROR) {
+ 			PrintGifError();
+-			exit(-1);
++			exit(EXIT_FAILURE);
+ 		    }
+ 		}
+ 		break;
+@@ -231,8 +235,10 @@
+ 
+     if (DGifCloseFile(GifFile) == GIF_ERROR) {
+ 	PrintGifError();
+-	exit(-1);
++	exit(EXIT_FAILURE);
+     }
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+@@ -252,11 +258,7 @@
+ 	char OneFileName[80];
+ 
+ 	if (OneFileFlag) {
+-#ifdef __MSDOS__
+ 	    if ((f[0] = fopen(FileName, "wb")) == NULL)
+-#else
+-	    if ((f[0] = fopen(FileName, "w")) == NULL)
+-#endif /* __MSDOS__ */
+ 		GIF_EXIT("Can't open input file name.");
+ 	}
+ 	else {
+@@ -266,12 +268,7 @@
+ 		strcpy(OneFileName, FileName);
+ 		strcat(OneFileName, Postfixes[i]);
+ 
+-#ifdef __MSDOS__
+ 		if ((f[i] = fopen(OneFileName, "wb")) == NULL)
+-#else
+-		if ((f[i] = fopen(OneFileName, "w")) == NULL)
+-#endif /* __MSDOS__ */
+-
+ 		    GIF_EXIT("Can't open input file name.");
+ 	    }
+ 	}
+diff -Nur giflib-4.1.0/util/gif2rle.c libungif-4.1.0b1/util/gif2rle.c
+--- giflib-4.1.0/util/gif2rle.c	Sun Sep  6 18:07:38 1998
++++ libungif-4.1.0b1/util/gif2rle.c	Tue Feb  8 02:00:26 2000
+@@ -13,9 +13,12 @@
+ * 5 Jan 90 - Version 1.0 by Gershon Elber.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <graphics.h>
+-#include <stdlib.h>
+ #include <alloc.h>
+ #include <io.h>
+ #include <dos.h>
+@@ -23,6 +26,7 @@
+ #endif /* __MSDOS__ */
+ 
+ #include <stdio.h>
++#include <stdlib.h>
+ #include <ctype.h>
+ #include <string.h>
+ #include <fcntl.h>
+@@ -76,7 +80,7 @@
+ /******************************************************************************
+ * Interpret the command line and scan the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	i, j, Error, NumFiles, Size, Row, Col, Width, Height, ExtCode, Count;
+     GifRecordType RecordType;
+@@ -93,19 +97,19 @@
+ 	else if (NumFiles > 1)
+ 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+     
+     if (NumFiles == 1) {
+ 	if ((GifFile = DGifOpenFileName(*FileName)) == NULL) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+     }
+     else {
+@@ -116,7 +120,7 @@
+ #endif /* __MSDOS__ */
+ 	if ((GifFile = DGifOpenFileHandle(0)) == NULL) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+     }
+ 
+@@ -147,13 +151,13 @@
+     do {
+ 	if (DGifGetRecordType(GifFile, &RecordType) == GIF_ERROR) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+ 	switch (RecordType) {
+ 	    case IMAGE_DESC_RECORD_TYPE:
+ 		if (DGifGetImageDesc(GifFile) == GIF_ERROR) {
+ 		    PrintGifError();
+-		    exit(-1);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		Row = GifFile->Image.Top; /* Image Position relative to Screen. */
+ 		Col = GifFile->Image.Left;
+@@ -164,7 +168,7 @@
+ 		if (GifFile->Image.Left + GifFile->Image.Width > GifFile->SWidth ||
+ 		   GifFile->Image.Top + GifFile->Image.Height > GifFile->SHeight) {
+ 		    fprintf(stderr, "Image %d is not confined to screen dimension, aborted.\n");
+-		    exit(-2);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		if (GifFile->Image.Interlace) {
+ 		    /* Need to perform 4 passes on the images: */
+@@ -175,7 +179,7 @@
+ 			    if (DGifGetLine(GifFile, &ScreenBuffer[j][Col],
+ 				Width) == GIF_ERROR) {
+ 				PrintGifError();
+-				exit(-1);
++				exit(EXIT_FAILURE);
+ 			    }
+ 			}
+ 		}
+@@ -185,7 +189,7 @@
+ 			if (DGifGetLine(GifFile, &ScreenBuffer[Row++][Col],
+ 				Width) == GIF_ERROR) {
+ 			    PrintGifError();
+-			    exit(-1);
++			    exit(EXIT_FAILURE);
+ 			}
+ 		    }
+ 		}
+@@ -194,12 +198,12 @@
+ 		/* Skip any extension blocks in file: */
+ 		if (DGifGetExtension(GifFile, &ExtCode, &Extension) == GIF_ERROR) {
+ 		    PrintGifError();
+-		    exit(-1);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		while (Extension != NULL) {
+ 		    if (DGifGetExtensionNext(GifFile, &Extension) == GIF_ERROR) {
+ 			PrintGifError();
+-			exit(-1);
++			exit(EXIT_FAILURE);
+ 		    }
+ 		}
+ 		break;
+@@ -222,8 +226,10 @@
+ 
+     if (DGifCloseFile(GifFile) == GIF_ERROR) {
+ 	PrintGifError();
+-	exit(-1);
++	exit(EXIT_FAILURE);
+     }
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+diff -Nur giflib-4.1.0/util/gif2x11.c libungif-4.1.0b1/util/gif2x11.c
+--- giflib-4.1.0/util/gif2x11.c	Sun Sep  6 21:15:28 1998
++++ libungif-4.1.0b1/util/gif2x11.c	Mon Feb  7 05:54:21 2000
+@@ -16,6 +16,10 @@
+ *		xgif program by John Bradley, bradley@cis.ipenn.edu.	     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <graphics.h>
+ #include <stdlib.h>
+@@ -101,6 +105,7 @@
+ static Pixmap XIcon;
+ static Cursor XCursor;
+ 
++
+ static void Screen2X(int argc, char **argv, GifRowType *ScreenBuffer,
+ 		     int ScreenWidth, int ScreenHeight);
+ static void AllocateColors1(void);
+@@ -109,7 +114,7 @@
+ /******************************************************************************
+ * Interpret the command line and scan the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	i, j, Error, NumFiles, ImageNum = 0, Size, Row, Col, Width, Height,
+         ExtCode, Count;
+@@ -129,19 +134,19 @@
+ 	else if (NumFiles > 1)
+ 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     if (NumFiles == 1) {
+ 	if ((GifFile = DGifOpenFileName(*FileName)) == NULL) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+     }
+     else {
+@@ -152,7 +157,7 @@
+ #endif /* __MSDOS__ */
+ 	if ((GifFile = DGifOpenFileHandle(0)) == NULL) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+     }
+ 
+@@ -194,13 +199,13 @@
+     do {
+ 	if (DGifGetRecordType(GifFile, &RecordType) == GIF_ERROR) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+ 	switch (RecordType) {
+ 	    case IMAGE_DESC_RECORD_TYPE:
+ 		if (DGifGetImageDesc(GifFile) == GIF_ERROR) {
+ 		    PrintGifError();
+-		    exit(-1);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		Row = GifFile->Image.Top; /* Image Position relative to Screen. */
+ 		Col = GifFile->Image.Left;
+@@ -210,8 +215,8 @@
+ 		    PROGRAM_NAME, ++ImageNum, Col, Row, Width, Height);
+ 		if (GifFile->Image.Left + GifFile->Image.Width > GifFile->SWidth ||
+ 		   GifFile->Image.Top + GifFile->Image.Height > GifFile->SHeight) {
+-		    fprintf(stderr, "Image %d is not confined to screen dimension, aborted.\n");
+-		    exit(-2);
++		    fprintf(stderr, "Image %d is not confined to screen dimension, aborted.\n",ImageNum);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		if (GifFile->Image.Interlace) {
+ 		    /* Need to perform 4 passes on the images: */
+@@ -222,7 +227,7 @@
+ 			    if (DGifGetLine(GifFile, &ScreenBuffer[j][Col],
+ 				Width) == GIF_ERROR) {
+ 				PrintGifError();
+-				exit(-1);
++				exit(EXIT_FAILURE);
+ 			    }
+ 			}
+ 		}
+@@ -232,7 +237,7 @@
+ 			if (DGifGetLine(GifFile, &ScreenBuffer[Row++][Col],
+ 				Width) == GIF_ERROR) {
+ 			    PrintGifError();
+-			    exit(-1);
++			    exit(EXIT_FAILURE);
+ 			}
+ 		    }
+ 		}
+@@ -241,12 +246,12 @@
+ 		/* Skip any extension blocks in file: */
+ 		if (DGifGetExtension(GifFile, &ExtCode, &Extension) == GIF_ERROR) {
+ 		    PrintGifError();
+-		    exit(-1);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		while (Extension != NULL) {
+ 		    if (DGifGetExtensionNext(GifFile, &Extension) == GIF_ERROR) {
+ 			PrintGifError();
+-			exit(-1);
++			exit(EXIT_FAILURE);
+ 		    }
+ 		}
+ 		break;
+@@ -266,11 +271,23 @@
+     ColorMapSize = ColorMap->ColorCount;
+     Screen2X(argc, argv, ScreenBuffer, GifFile->SWidth, GifFile->SHeight);
+ 
++    for (i = GifFile->SHeight - 1 ; i >= 0 ; i--) {
++	free( ScreenBuffer[ i ] );
++    }
++    free( ScreenBuffer );
++    if ( XImageBuffer != (XImage *) NULL )
++	XDestroyImage( XImageBuffer );
++
++    if ( XIcon )
++	XFreePixmap( XDisplay , XIcon );
++
+     if (DGifCloseFile(GifFile) == GIF_ERROR) {
+ 	PrintGifError();
+-	exit(-1);
++	exit(EXIT_FAILURE);
+     }
+     GifQprintf("\n");
++
++	return 0 ;
+ }
+ 
+ /******************************************************************************
+@@ -279,6 +296,11 @@
+ static void Screen2X(int argc, char **argv, GifRowType *ScreenBuffer,
+ 		     int ScreenWidth, int ScreenHeight)
+ {
++#define	WM_DELETE_WINDOW	"WM_DELETE_WINDOW"
++
++	Status	rc ;
++	Atom	atomKill ;
++
+     int i, j, c, Size, x, y,
+         MinIntensity, MaxIntensity, AvgIntensity, IconSizeX, IconSizeY;
+     char *XImageData, *XIconData, KeyBuffer[81];
+@@ -366,6 +388,13 @@
+ 			   argv, argc,
+ 			   &Hints);
+ 
++    free( XIconData );
++
++    atomKill = XInternAtom(XDisplay, WM_DELETE_WINDOW, False );
++    rc = XSetWMProtocols( XDisplay, XImageWndw , &atomKill , 1 );
++    if ( rc == 0 )
++	GIF_EXIT("Failed to trap WM_DELETE_WINDOW event" );
++
+     XSelectInput(XDisplay, XImageWndw, ExposureMask | KeyPressMask);
+ 
+     /* Set out own cursor: */
+@@ -401,7 +430,11 @@
+ 	        KEvent = (XKeyEvent *) &Event;
+ 		XLookupString(KEvent, KeyBuffer, 80, &KS, &Stat);
+ 		if (KeyBuffer[0] == 3) return;
++	/*	if (KeyBuffer[0] == 3) { free(XImageData ); return; }	made by XDestroyImage	*/
+ 		break;
++	    case ClientMessage :
++		if ( Event.xclient.data.l[0] == atomKill ) return ;
++		break ;
+ 	}
+     }
+ }
+diff -Nur giflib-4.1.0/util/gifasm.c libungif-4.1.0b1/util/gifasm.c
+--- giflib-4.1.0/util/gifasm.c	Sun Sep  6 18:07:38 1998
++++ libungif-4.1.0b1/util/gifasm.c	Tue Feb  8 02:00:26 2000
+@@ -7,6 +7,7 @@
+ * into seperated files, or assembles few single image GIF files into one.    *
+ * Options:								     *
+ * -q : quiet printing mode.						     *
++* -A : assemble few files into one as an animation gif.                 *
+ * -a : assemble few files into one (default)				     *
+ * -d name : disassmble given GIF file into seperate files derived from name. *
+ * -h : on-line help.							     *
+@@ -15,18 +16,26 @@
+ * 7 Jul 89 - Version 1.0 by Gershon Elber.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+-#include <stdlib.h>
+ #include <alloc.h>
+ #endif /* __MSDOS__ */
+ 
+ #include <stdio.h>
++#include <stdlib.h>
+ #include <ctype.h>
+ #include <string.h>
+ #include "gif_lib.h"
+ #include "getarg.h"
+ 
+ #define PROGRAM_NAME	"GifAsm"
++#define GIF_ASM_NAME   "NETSCAPE2.0"
++#define COMMENT_GIF_ASM    "(c) Gershon Elber, GifLib"
++
++#define SQR(x)     ((x) * (x))
+ 
+ #ifdef __MSDOS__
+ extern unsigned int
+@@ -38,7 +47,7 @@
+         "Gif toolkit module,\t\tGershon Elber\n\
+ 	(C) Copyright 1989 Gershon Elber.\n";
+ static char
+-    *CtrlStr = "GifAsm q%- a%- d%-OutFileName!s h%- GifFile(s)!*s";
++    *CtrlStr = "GifAsm q%- A%-Delay!d a%- d%-OutFileName!s h%- GifFile(s)!*s";
+ #else
+ static char
+     *VersionStr =
+@@ -50,12 +59,17 @@
+ static char
+     *CtrlStr =
+ 	PROGRAM_NAME
+-	" q%- a%- d%-OutFileName!s h%- GifFile(s)!*s";
++    " q%- A%-Delay!d a%- d%-OutFileName!s h%- GifFile(s)!*s";
+ #endif /* SYSV */
+ 
+ static int
++    AsmGifAnimFlag = FALSE,
++    AsmGifAnimNumIters = 1,
++    AsmGifAnimDelay = 0,
++    AsmGifAnimUserWait = FALSE,
+     AsmFlag = FALSE;
+ 
++static void DoAssemblyGifAnim(int NumFiles, char **FileNames);
+ static void DoAssembly(int NumFiles, char **FileNames);
+ static void DoDisassembly(char *InFileName, char *OutFileName);
+ static void QuitGifError(GifFileType *GifFileIn, GifFileType *GifFileOut);
+@@ -63,41 +77,45 @@
+ /******************************************************************************
+ * Interpret the command line and scan the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	Error, NumFiles, DisasmFlag = FALSE, HelpFlag = FALSE;
+     char **FileNames = NULL, *OutFileName;
+ 
+-    if ((Error = GAGetArgs(argc, argv, CtrlStr,
+-		&GifQuietPrint, &AsmFlag, &DisasmFlag, &OutFileName,
+-		&HelpFlag, &NumFiles, &FileNames)) != FALSE) {
++    if ((Error = GAGetArgs(argc, argv, CtrlStr, &GifQuietPrint,
++              &AsmGifAnimFlag, &AsmGifAnimDelay,
++              &AsmFlag, &DisasmFlag, &OutFileName,
++              &HelpFlag, &NumFiles, &FileNames)) != FALSE) {
+ 	GAPrintErrMsg(Error);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+-    if (!AsmFlag && !DisasmFlag) AsmFlag = TRUE; /* Make default - assemble. */
+-    if (AsmFlag && NumFiles < 2) {
++    if (!AsmFlag && !AsmGifAnimFlag && !DisasmFlag)
++        AsmFlag = TRUE; /* Make default - assemble. */
++    if ((AsmFlag || AsmGifAnimFlag) && NumFiles < 2) {
+ 	GIF_MESSAGE("At list two GIF files are required to assembly operation.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+-    if (!AsmFlag && NumFiles > 1) {
++    if (!AsmFlag && !AsmGifAnimFlag && NumFiles > 1) {
+ 	GIF_MESSAGE("Error in command line parsing - one GIF file please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+-    if (AsmFlag)
++    if (AsmFlag || AsmGifAnimFlag)
+         DoAssembly(NumFiles, FileNames);
+     else
+ 	DoDisassembly(NumFiles == 1 ? *FileNames : NULL, OutFileName);
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+@@ -105,9 +123,10 @@
+ ******************************************************************************/
+ static void DoAssembly(int NumFiles, char **FileNames)
+ {
+-    int	i, ExtCode, CodeSize;
++    int    i, j, k, Len = 0, ExtCode, CodeSize, ReMapColor[256];
++    ColorMapObject FirstColorMap;
+     GifRecordType RecordType;
+-    GifByteType *Extension, *CodeBlock;
++    GifByteType *Line = NULL, *Extension, *CodeBlock;
+     GifFileType *GifFileIn = NULL, *GifFileOut = NULL;
+ 
+     /* Open stdout for the output file: */
+@@ -120,21 +139,89 @@
+ 	    QuitGifError(GifFileIn, GifFileOut);
+ 
+ 	/* And dump out screen descriptor iff its first image.	*/
+-	if (i == 0)
++	if (i == 0) {
+ 	    if (EGifPutScreenDesc(GifFileOut,
+ 		GifFileIn->SWidth, GifFileIn->SHeight,
+ 		GifFileIn->SColorResolution, GifFileIn->SBackGroundColor,
+ 		GifFileIn->SColorMap) == GIF_ERROR)
+ 		QuitGifError(GifFileIn, GifFileOut);
+ 
++        FirstColorMap = *GifFileIn->SColorMap;
++        FirstColorMap.Colors =
++        (GifColorType *) malloc(sizeof(GifColorType) *
++                    FirstColorMap.ColorCount);
++        memcpy(FirstColorMap.Colors, GifFileIn->SColorMap->Colors,
++           sizeof(GifColorType) * FirstColorMap.ColorCount);
++ 
++        if (AsmGifAnimFlag) {
++        char ExtStr[3];
++ 
++        ExtStr[0] = AsmGifAnimNumIters % 256;
++        ExtStr[1] = AsmGifAnimNumIters / 256;
++        ExtStr[2] = 0;
++ 
++        /* Dump application+comment blocks. */
++        EGifPutExtensionFirst(GifFileOut, APPLICATION_EXT_FUNC_CODE,
++                      strlen(GIF_ASM_NAME), GIF_ASM_NAME);
++        EGifPutExtensionLast(GifFileOut, APPLICATION_EXT_FUNC_CODE,
++                     3, ExtStr);
++        EGifPutExtension(GifFileOut, COMMENT_EXT_FUNC_CODE,
++                 strlen(COMMENT_GIF_ASM), COMMENT_GIF_ASM);
++        }
++        for (j = 0; j < GifFileIn->SColorMap->ColorCount; j++)
++        ReMapColor[j] = j;
++    }
++    else {
++        /* Compute the remapping of this image's color map to first one. */
++        for (j = 0; j < GifFileIn->SColorMap->ColorCount; j++) {
++        int MinIndex = 0,
++            MinDist = 3 * 256 * 256;
++        GifColorType *CMap1 = FirstColorMap.Colors,
++                     *c = GifFileIn->SColorMap->Colors;
++ 
++        /* Find closest color in first color map to this color. */
++        for (k = 0; k < FirstColorMap.ColorCount; k++) {
++            int Dist = SQR(c[j].Red - CMap1[k].Red) +
++                   SQR(c[j].Green - CMap1[k].Green) +
++                   SQR(c[j].Blue - CMap1[k].Blue);
++ 
++            if (MinDist > Dist) {
++            MinDist = Dist;
++            MinIndex = k;
++            }
++        }
++        ReMapColor[j] = MinIndex;
++        }
++    }
++
+ 	do {
+-	    if (DGifGetRecordType(GifFileIn, &RecordType) == GIF_ERROR)
++        if (DGifGetRecordType(GifFileIn, &RecordType) == GIF_ERROR)
+ 		QuitGifError(GifFileIn, GifFileOut);
+ 
+ 	    switch (RecordType) {
+ 		case IMAGE_DESC_RECORD_TYPE:
+ 		    if (DGifGetImageDesc(GifFileIn) == GIF_ERROR)
+ 			QuitGifError(GifFileIn, GifFileOut);
++ 
++            if (AsmGifAnimFlag) {
++            static char
++                ExtStr[4] = { 0x04, 0x00, 0x00, 0xff };
++ 
++            ExtStr[0] = AsmGifAnimUserWait ? 0x06 : 0x04;
++            ExtStr[1] = AsmGifAnimDelay % 256;
++            ExtStr[2] = AsmGifAnimDelay / 256;
++ 
++            /* Dump graphics control block. */
++            EGifPutExtension(GifFileOut, GRAPHICS_EXT_FUNC_CODE,
++                     4, ExtStr);
++            }
++ 
++            if (i == 0) {
++            Len = sizeof(GifPixelType) * GifFileIn->Image.Width;
++            if ((Line = (GifRowType) malloc(Len)) == NULL)
++                GIF_EXIT("Failed to allocate memory required, aborted.");
++            }
++ 
+ 		    /* Put image descriptor to out file: */
+ 		    if (EGifPutImageDesc(GifFileOut,
+ 			GifFileIn->Image.Left, GifFileIn->Image.Top,
+@@ -143,15 +230,18 @@
+ 			GifFileIn->Image.ColorMap) == GIF_ERROR)
+ 			QuitGifError(GifFileIn, GifFileOut);
+ 
+-		    /* Now read image itself in decoded form as we dont      */
+-		    /* dont care what is there, and this is much faster.     */
+-		    if (DGifGetCode(GifFileIn, &CodeSize, &CodeBlock) == GIF_ERROR
+-		     || EGifPutCode(GifFileOut, CodeSize, CodeBlock) == GIF_ERROR)
+-			QuitGifError(GifFileIn, GifFileOut);
+-		    while (CodeBlock != NULL)
+-			if (DGifGetCodeNext(GifFileIn, &CodeBlock) == GIF_ERROR ||
+-			    EGifPutCodeNext(GifFileOut, CodeBlock) == GIF_ERROR)
++            /* Now read image itself and remap to global color map.  */
++            for (k = 0; k < GifFileIn->Image.Height; k++) {
++            if (DGifGetLine(GifFileIn, Line, Len) != GIF_ERROR) {
++                for (j = 0; j < Len; j++)
++                Line[j] = ReMapColor[Line[j]];
++ 
++                if (EGifPutLine(GifFileOut, Line, Len) == GIF_ERROR)
++                QuitGifError(GifFileIn, GifFileOut);
++            }
++            else
+ 			    QuitGifError(GifFileIn, GifFileOut);
++            }
+ 		    break;
+ 		case EXTENSION_RECORD_TYPE:
+ 		    /* Skip any extension blocks in file: */
+@@ -189,13 +279,16 @@
+ ******************************************************************************/
+ static void DoDisassembly(char *InFileName, char *OutFileName)
+ {
+-    int	i, ExtCode, CodeSize, FileNum = 0, FileEmpty;
++    int	ExtCode, CodeSize, FileNum = 0, FileEmpty;
+     GifRecordType RecordType;
+-    char CrntFileName[80], *p;
++    char CrntFileName[80];
+     GifByteType *Extension, *CodeBlock;
+     GifFileType *GifFileIn = NULL, *GifFileOut = NULL;
+ 
+ #ifdef __MSDOS__
++    int i;
++    char *p;
++
+     /* If name has type postfix, strip it out, and make sure name is less    */
+     /* or equal to 6 chars, so we will have 2 chars in name for numbers.     */
+     for (i = 0; i < (int)strlen(OutFileName);  i++)/* Make sure all is upper case.*/
+@@ -312,5 +405,5 @@
+     PrintGifError();
+     if (GifFileIn != NULL) DGifCloseFile(GifFileIn);
+     if (GifFileOut != NULL) EGifCloseFile(GifFileOut);
+-    exit(1);
++    exit(EXIT_FAILURE);
+ }
+diff -Nur giflib-4.1.0/util/gifbg.c libungif-4.1.0b1/util/gifbg.c
+--- giflib-4.1.0/util/gifbg.c	Sun Sep  6 21:15:28 1998
++++ libungif-4.1.0b1/util/gifbg.c	Mon Feb  7 05:54:21 2000
+@@ -19,6 +19,10 @@
+ * 9 Jul 89 - Version 1.0 by Gershon Elber.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <stdlib.h>
+ #include <alloc.h>
+@@ -101,7 +105,7 @@
+ /******************************************************************************
+ * Interpret the command line and scan the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     unsigned int Ratio;
+     int	i, j, l, LevelHeight, LevelWidth, Error, LogNumLevels, FlipDir,
+@@ -122,13 +126,13 @@
+ 		&HelpFlag)) != FALSE) {
+ 	GAPrintErrMsg(Error);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     /* Make sure intensities are in the right range: */
+@@ -352,6 +356,8 @@
+ 
+     if (EGifCloseFile(GifFile) == GIF_ERROR)
+ 	QuitGifError(GifFile);
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+@@ -361,5 +367,5 @@
+ {
+     PrintGifError();
+     if (GifFile != NULL) EGifCloseFile(GifFile);
+-    exit(1);
++    exit(EXIT_FAILURE);
+ }
+diff -Nur giflib-4.1.0/util/gifclip.c libungif-4.1.0b1/util/gifclip.c
+--- giflib-4.1.0/util/gifclip.c	Sun Sep  6 21:15:29 1998
++++ libungif-4.1.0b1/util/gifclip.c	Mon Feb  7 05:54:21 2000
+@@ -15,6 +15,10 @@
+ * 8 Jul 89 - Version 1.0 by Gershon Elber.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <stdlib.h>
+ #include <alloc.h>
+@@ -61,7 +65,7 @@
+ /******************************************************************************
+ * Interpret the command line and scan the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	i, Error, NumFiles, ExtCode, CodeSize, ImageNum = 0,
+ 	ImageFlag = FALSE, ImageNFlag = FALSE, ImageN, ImageX1, ImageY1,
+@@ -84,20 +88,20 @@
+ 	else if (NumFiles > 1)
+ 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     /* Test to make sure exactly one of ImageFlag & ImageNFlag is set: */
+     if ((ImageFlag && ImageNFlag) || (!ImageFlag && !ImageNFlag)) {
+ 	GIF_MESSAGE("Exactly one of [-i ...] && [-n ...] please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+     if (ImageFlag) ImageN = 1;		    /* Its first image we are after. */
+ 
+@@ -303,6 +307,8 @@
+ 	QuitGifError(GifFileIn, GifFileOut);
+     if (EGifCloseFile(GifFileOut) == GIF_ERROR)
+ 	QuitGifError(GifFileIn, GifFileOut);
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+@@ -313,6 +319,6 @@
+     PrintGifError();
+     if (GifFileIn != NULL) DGifCloseFile(GifFileIn);
+     if (GifFileOut != NULL) EGifCloseFile(GifFileOut);
+-    exit(1);
++    exit(EXIT_FAILURE);
+ }
+ 
+diff -Nur giflib-4.1.0/util/gifclrmp.c libungif-4.1.0b1/util/gifclrmp.c
+--- giflib-4.1.0/util/gifclrmp.c	Sun Sep  6 21:15:29 1998
++++ libungif-4.1.0b1/util/gifclrmp.c	Mon Feb  7 05:54:21 2000
+@@ -22,6 +22,10 @@
+ * 17 Jul 89 - Version 1.0 by Gershon Elber.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <stdlib.h>
+ #include <alloc.h>
+@@ -83,7 +87,7 @@
+ /******************************************************************************
+ * Interpret the command line and scan the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	Error, NumFiles, ExtCode, CodeSize, ImageNum = 0,
+ 	ImageNFlag = FALSE, ImageN, HelpFlag = FALSE, HasGIFOutput;
+@@ -103,13 +107,13 @@
+ 	else if (NumFiles > 1)
+ 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     if (SaveFlag + LoadFlag + GammaFlag + TranslateFlag > 1)
+@@ -156,7 +160,7 @@
+ 	    /* We can quit here, as we have the color map: */
+ 	    if (GifFileIn != NULL) DGifCloseFile(GifFileIn);
+ 	    fclose(ColorFile);
+-	    exit(0);
++	    exit(EXIT_SUCCESS);
+ 	}
+     }
+     /* And dump out its new possible repositioned screen information: */
+@@ -183,7 +187,7 @@
+ 			/* We can quit here, as we have the color map: */
+ 			if (GifFileIn != NULL) DGifCloseFile(GifFileIn);
+ 			fclose(ColorFile);
+-			exit(0);
++			exit(EXIT_SUCCESS);
+ 		    }
+ 		}
+ 		if (HasGIFOutput)
+@@ -267,6 +271,8 @@
+     if (HasGIFOutput)
+ 	if (EGifCloseFile(GifFileOut) == GIF_ERROR)
+ 	    QuitGifError(GifFileIn, GifFileOut);
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+@@ -316,9 +322,11 @@
+ 
+ 	/* Read the translation table in TranslateFile: */
+ 	for (i = 0; i < ColorMap->ColorCount; i++) {
++	    int tmp;
+ 	    if (feof(TranslateFile))
+ 		GIF_EXIT("Color file to load color map from, too small.");
+-	    fscanf(TranslateFile, "%3d %3d\n", &Dummy, &Translation[i]);
++	    fscanf(TranslateFile, "%3d %3d\n", &Dummy, &tmp);
++	    Translation[i] = tmp;
+ 	    if (Translation[i] > Max)
+ 		Max = Translation[i];
+ 	}
+@@ -348,6 +356,6 @@
+     PrintGifError();
+     if (GifFileIn != NULL) DGifCloseFile(GifFileIn);
+     if (GifFileOut != NULL) EGifCloseFile(GifFileOut);
+-    exit(1);
++    exit(EXIT_FAILURE);
+ }
+ 
+diff -Nur giflib-4.1.0/util/gifcolor.c libungif-4.1.0b1/util/gifcolor.c
+--- giflib-4.1.0/util/gifcolor.c	Sun Sep  6 21:15:29 1998
++++ libungif-4.1.0b1/util/gifcolor.c	Mon Feb  7 05:54:21 2000
+@@ -14,6 +14,10 @@
+ * 21 Sep 92 - Version 1.0 by Eric S. Raymond.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <stdlib.h>
+ #include <alloc.h>
+@@ -64,7 +68,7 @@
+ /******************************************************************************
+ * Interpret the command line and generate the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	i, j, l, Error, GifQuietPrint, ColorMapSize,
+ 	BackGroundFlag = FALSE, HelpFlag = FALSE;
+@@ -73,6 +77,7 @@
+     ColorMapObject *ColorMap;
+     GifFileType *GifFile;
+     GifColorType	ScratchMap[256];
++    int red, green, blue;
+ 
+     if ((Error = GAGetArgs(argc, argv, CtrlStr,
+ 			   &GifQuietPrint,
+@@ -80,13 +85,13 @@
+ 			   &HelpFlag)) != FALSE) {
+ 	GAPrintErrMsg(Error);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     /* Allocate the raster buffer for GIF_FONT_HEIGHT scan lines. */
+@@ -105,9 +110,10 @@
+     ColorMapSize = 0;
+     while (fscanf(stdin,
+ 		  "%*3d %3d %3d %3d\n",
+-		  &ScratchMap[ColorMapSize].Red,
+-		  &ScratchMap[ColorMapSize].Green,
+-		  &ScratchMap[ColorMapSize].Blue) == 3) {
++		  &red, &green, &blue) == 3) {
++	    ScratchMap[ColorMapSize].Red = red;
++	    ScratchMap[ColorMapSize].Green = green;
++	    ScratchMap[ColorMapSize].Blue = blue;
+ 	    ColorMapSize++;
+ 	}
+ 
+@@ -144,6 +150,8 @@
+ 
+     if (EGifCloseFile(GifFile) == GIF_ERROR)
+ 	QuitGifError(GifFile);
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+@@ -177,5 +185,5 @@
+ {
+     PrintGifError();
+     if (GifFile != NULL) EGifCloseFile(GifFile);
+-    exit(1);
++    exit(EXIT_FAILURE);
+ }
+diff -Nur giflib-4.1.0/util/gifcomb.c libungif-4.1.0b1/util/gifcomb.c
+--- giflib-4.1.0/util/gifcomb.c	Sun Sep  6 21:15:29 1998
++++ libungif-4.1.0b1/util/gifcomb.c	Mon Feb  7 05:54:21 2000
+@@ -16,6 +16,10 @@
+ * 12 Jul 89 - Version 1.0 by Gershon Elber.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <stdlib.h>
+ #include <alloc.h>
+@@ -64,7 +68,7 @@
+ /******************************************************************************
+ * Interpret the command line and scan the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	i, j, Error, NumFiles, Size,
+ 	MaskFlag = FALSE, HelpFlag = FALSE;
+@@ -85,13 +89,13 @@
+ 	else if (NumFiles != 2)
+ 	    GIF_MESSAGE("Error in command line parsing - two GIF file please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     /* Open all input files (two GIF to combine, and optional mask): */
+@@ -205,6 +209,8 @@
+ 	EGifCloseFile(GifFileOut) == GIF_ERROR ||
+ 	(MaskFlag && DGifCloseFile(GifMaskFile) == GIF_ERROR))
+ 	QuitGifError(GifFileIn1, GifFileIn2, GifMaskFile, GifFileOut);
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+@@ -255,5 +261,5 @@
+     if (GifFileIn2 != NULL) DGifCloseFile(GifFileIn2);
+     if (GifMaskFile != NULL) DGifCloseFile(GifMaskFile);
+     if (GifFileOut != NULL) EGifCloseFile(GifFileOut);
+-    exit(1);
++    exit(EXIT_FAILURE);
+ }
+diff -Nur giflib-4.1.0/util/giffiltr.c libungif-4.1.0b1/util/giffiltr.c
+--- giflib-4.1.0/util/giffiltr.c	Sun Sep  6 18:07:38 1998
++++ libungif-4.1.0b1/util/giffiltr.c	Tue Feb  8 02:00:26 2000
+@@ -1,7 +1,7 @@
+ /*
+  * Skeleton file for generic GIF `filter' program --- sequentially read GIF
+  * records from stdin, process them, send them out.  Most of the junk above
+- * `void main' isn't needed for the skeleton, but is likely to be for what
++ * `int main' isn't needed for the skeleton, but is likely to be for what
+  * you'll do with it.
+  *
+  * If you compile this, it will turn into an expensive GIF copying routine;
+@@ -14,15 +14,20 @@
+  * compression may use more (or fewer) bits.  The uncompressed rasters should,
+  * however, be identical (you can check this with icon2gif -d).
+  */
++
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <dos.h>
+ #include <alloc.h>
+-#include <stdlib.h>
+ #include <graphics.h>
+ #include <io.h>
+ #endif /* __MSDOS__ */
+ 
+ #include <stdio.h>
++#include <stdlib.h>
+ #include <string.h>
+ #include <fcntl.h>
+ #include "getarg.h"
+@@ -44,13 +49,13 @@
+     PrintGifError();
+     if (GifFileIn != NULL) DGifCloseFile(GifFileIn);
+     if (GifFileOut != NULL) EGifCloseFile(GifFileOut);
+-    exit(1);
++    exit(EXIT_FAILURE);
+ }
+ 
+ /******************************************************************************
+ * Main sequence								      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     GifFileType *GifFileIn = NULL, *GifFileOut = NULL;
+     GifRecordType RecordType;
+@@ -109,7 +114,7 @@
+ 		if (DGifGetExtension(GifFileIn, &ExtCode, &Extension) == GIF_ERROR)
+ 		    QuitGifError(GifFileIn, GifFileOut);
+ 		if (EGifPutExtension(GifFileOut, ExtCode, Extension[0],
+-							Extension) == GIF_ERROR)
++							Extension + 1) == GIF_ERROR)
+ 		    QuitGifError(GifFileIn, GifFileOut);
+ 
+ 		/* No support to more than one extension blocks, so discard: */
+@@ -131,5 +136,5 @@
+     if (EGifCloseFile(GifFileOut) == GIF_ERROR)
+ 	QuitGifError(GifFileIn, GifFileOut);
+ 
+-    exit(0);
++    return 0;
+ }
+diff -Nur giflib-4.1.0/util/giffix.c libungif-4.1.0b1/util/giffix.c
+--- giflib-4.1.0/util/giffix.c	Sun Sep  6 21:15:30 1998
++++ libungif-4.1.0b1/util/giffix.c	Mon Feb  7 05:54:21 2000
+@@ -13,6 +13,10 @@
+ * 5 May 91 - Version 1.0 by Gershon Elber.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <stdlib.h>
+ #include <alloc.h>
+@@ -63,7 +67,7 @@
+ /******************************************************************************
+ * Interpret the command line and scan the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	i, j, Error, NumFiles, ExtCode, Row, Col, Width, Height,
+ 	DarkestColor = 0, ColorIntens = 10000, HelpFlag = FALSE;
+@@ -82,13 +86,13 @@
+ 	else if (NumFiles > 1)
+ 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     if (NumFiles == 1) {
+@@ -199,6 +203,8 @@
+ 	QuitGifError(GifFileIn, GifFileOut);
+     if (EGifCloseFile(GifFileOut) == GIF_ERROR)
+ 	QuitGifError(GifFileIn, GifFileOut);
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+@@ -210,5 +216,5 @@
+     PrintGifError();
+     if (GifFileIn != NULL) DGifCloseFile(GifFileIn);
+     if (GifFileOut != NULL) EGifCloseFile(GifFileOut);
+-    exit(1);
++    exit(EXIT_FAILURE);
+ }
+diff -Nur giflib-4.1.0/util/gifflip.c libungif-4.1.0b1/util/gifflip.c
+--- giflib-4.1.0/util/gifflip.c	Sun Sep  6 21:15:30 1998
++++ libungif-4.1.0b1/util/gifflip.c	Mon Feb  7 05:54:21 2000
+@@ -17,6 +17,10 @@
+ * 10 Jul 89 - Version 1.0 by Gershon Elber.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <stdlib.h>
+ #include <alloc.h>
+@@ -76,7 +80,7 @@
+ /******************************************************************************
+ * Interpret the command line and scan the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	i, Error, NumFiles, ExtCode, FlipDirection = FLIP_RIGHT,
+ 	RightFlag = FALSE, LeftFlag = FALSE,
+@@ -96,13 +100,13 @@
+ 	else if (NumFiles > 1)
+ 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     if ((i = (RightFlag != 0) + (LeftFlag != 0) +
+@@ -224,6 +228,8 @@
+ 	QuitGifError(GifFileIn, GifFileOut);
+     if (EGifCloseFile(GifFileOut) == GIF_ERROR)
+ 	QuitGifError(GifFileIn, GifFileOut);
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+@@ -337,5 +343,5 @@
+     PrintGifError();
+     if (GifFileIn != NULL) DGifCloseFile(GifFileIn);
+     if (GifFileOut != NULL) EGifCloseFile(GifFileOut);
+-    exit(1);
++    exit(EXIT_FAILURE);
+ }
+diff -Nur giflib-4.1.0/util/gifhisto.c libungif-4.1.0b1/util/gifhisto.c
+--- giflib-4.1.0/util/gifhisto.c	Sun Sep  6 21:15:30 1998
++++ libungif-4.1.0b1/util/gifhisto.c	Mon Feb  7 05:54:21 2000
+@@ -19,6 +19,10 @@
+ * 8 Jul 89 - Version 1.0 by Gershon Elber.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <stdlib.h>
+ #include <alloc.h>
+@@ -81,7 +85,7 @@
+ /******************************************************************************
+ * Interpret the command line and scan the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	i, j, Size, Error, NumFiles, ExtCode, CodeSize, NumColors = 2, Color,
+ 	Count, ImageNum = 0, TextFlag = FALSE, SizeFlag = FALSE,
+@@ -104,13 +108,13 @@
+ 	else if (NumFiles > 1)
+ 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     if (NumFiles == 1) {
+@@ -252,6 +256,8 @@
+ 	if (EGifCloseFile(GifFileOut) == GIF_ERROR)
+ 	    QuitGifError(GifFileIn, GifFileOut);
+     }
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+@@ -262,5 +268,5 @@
+     PrintGifError();
+     if (GifFileIn != NULL) DGifCloseFile(GifFileIn);
+     if (GifFileOut != NULL) EGifCloseFile(GifFileOut);
+-    exit(1);
++    exit(EXIT_FAILURE);
+ }
+diff -Nur giflib-4.1.0/util/gifinfo.c libungif-4.1.0b1/util/gifinfo.c
+--- giflib-4.1.0/util/gifinfo.c	Thu Jan  1 01:00:00 1970
++++ libungif-4.1.0b1/util/gifinfo.c	Tue Feb  8 02:00:26 2000
+@@ -0,0 +1,225 @@
++/*****************************************************************************
++* "Gifinfo"								     *
++*									     *
++* Written by:  Martin Edlman			Ver 0.1.0, Jul. 1989	     *
++******************************************************************************
++* Program to display information (size and comments) in GIF file.	     *
++* uses libungif	on Linux. Not tried on other systems.			     *
++* Options:								     *
++* -h : on-line help.							     *
++* -f : format output string						     *
++*      \h - height							     *
++*      \w - width							     *
++*      \c - comment							     *
++*      \f - file name							     *
++*      Example: -f 'Image \f:\n Size: \wx\h\n Comment: \c\n'		     *
++******************************************************************************
++* History:								     *
++* 21 Jun 99 - Version 1.0 by Martin Edlman.				     *
++*****************************************************************************/
++
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
++#ifdef __MSDOS__
++#include <graphics.h>
++#include <alloc.h>
++#include <io.h>
++#include <dos.h>
++#include <bios.h>
++#endif /* __MSDOS__ */
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <ctype.h>
++#include <string.h>
++#include <fcntl.h>
++#include "gif_lib.h"
++#include "getarg.h"
++
++#define PROGRAM_NAME	"GifInfo"
++
++#define DEFAULTFORMAT   "Size: \\wx\\h\\nComment: \\c\\n"
++
++
++#ifdef __MSDOS__
++extern unsigned int
++    _stklen = 16384;			     /* Increase default stack size. */
++#endif /* __MSDOS__ */
++
++#ifdef SYSV
++static char *VersionStr =
++        "Gif toolkit module,\t\tMartin Edlman\n\
++	(C) Copyright 1999 Martin Edlman.\n";
++static char
++    *CtrlStr = "GifInfo f%-Format!s h%- GifFile!*s";
++#else
++static char
++    *VersionStr =
++	PROGRAM_NAME
++	GIF_LIB_VERSION
++	"	Martin Edlman,	"
++	__DATE__ ",   " __TIME__ "\n"
++	"(C) Copyright 1999 Martin Edlman.\n";
++static char
++    *CtrlStr =
++	PROGRAM_NAME
++	" f%-Format!s h%- GifFile!*s";
++#endif /* SYSV */
++
++/* Make some variables global, so we could access them faster: */
++static int
++    HelpFlag = FALSE;
++
++/******************************************************************************
++* Interpret the command line and scan the given GIF file.		      *
++******************************************************************************/
++int main(int argc, char **argv)
++{
++    int	i, Error, NumFiles, NumFormats, Size, Width, Height, ExtCode;
++    GifRecordType RecordType;
++    GifByteType  *Extension;
++    char         *Format = NULL, *Comment;
++    char        **FileName = NULL;
++    GifRowType    RowBuffer;
++    GifFileType  *GifFile;
++
++    if ((Error = GAGetArgs(argc, argv, CtrlStr, &NumFormats, &Format,
++                           &HelpFlag, &NumFiles, &FileName)) != FALSE ||
++        (NumFiles > 1 && !HelpFlag)) {
++        if (Error)
++            GAPrintErrMsg(Error);
++	else if (NumFiles > 1)
++	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
++	GAPrintHowTo(CtrlStr);
++	exit(EXIT_FAILURE);
++    }
++
++    if (Format == NULL) {
++        Format = malloc(strlen(DEFAULTFORMAT)+1);
++        strcpy(Format, DEFAULTFORMAT);
++    }
++
++    if (HelpFlag) {
++	fprintf(stderr, VersionStr);
++	GAPrintHowTo(CtrlStr);
++	printf("Format: quoted text string used for formating of information\n");
++	printf("  Special characters for various information can be used\n");
++	printf("  \\f - filename of GIF file\n");
++	printf("  \\c - comment\n");
++	printf("  \\w - width of image\n");
++	printf("  \\h - height of image\n");
++	printf("  \\n - new line\n");
++	printf("  \\\\ - backslash\n");
++	printf("Default format will be used if not specified with -f:\n");
++	printf("  %s\n\n", DEFAULTFORMAT);
++	exit(EXIT_SUCCESS);
++    }
++    
++    if (NumFiles == 1) {
++	if ((GifFile = DGifOpenFileName(*FileName)) == NULL) {
++	    PrintGifError();
++	    exit(EXIT_FAILURE);
++	}
++    }
++    else {
++	/* Use the stdin instead: */
++
++#ifdef __MSDOS__
++	setmode(0, O_BINARY);
++#endif /* __MSDOS__ */
++	if ((GifFile = DGifOpenFileHandle(0)) == NULL) {
++	    PrintGifError();
++	    exit(EXIT_FAILURE);
++	}
++    }
++
++    Comment = (char*) malloc(1);
++    strcpy(Comment, "\0");
++
++    /* Allocate memory or one row which will be used as trash during reading
++       image*/
++    Size = GifFile->SWidth * sizeof(GifPixelType);/* Size in bytes one row.*/
++    if ((RowBuffer = (GifRowType) malloc(Size)) == NULL) /* First row. */
++	GIF_EXIT("Failed to allocate memory required, aborted.");
++
++    /* Scan the content of the GIF file and load the image(s) in: */
++    do {
++	if (DGifGetRecordType(GifFile, &RecordType) == GIF_ERROR) {
++	    PrintGifError();
++	    exit(EXIT_FAILURE);
++	}
++	switch (RecordType) {
++	    case IMAGE_DESC_RECORD_TYPE:
++		if (DGifGetImageDesc(GifFile) == GIF_ERROR) {
++		    PrintGifError();
++		    exit(EXIT_FAILURE);
++		}
++		Width = GifFile->Image.Width;
++		Height = GifFile->Image.Height;
++		if (GifFile->Image.Left + GifFile->Image.Width > GifFile->SWidth ||
++		   GifFile->Image.Top + GifFile->Image.Height > GifFile->SHeight) {
++		    fprintf(stderr, "Image %d is not confined to screen dimension, aborted.\n");
++		    exit(EXIT_FAILURE);
++		}
++                /* We don't care about Interlaced as image is not interesting, read sequentialy */
++		for (i = 0; i < Height; i++) {
++		    GifQprintf("\b\b\b\b%-4d", i);
++		    if (DGifGetLine(GifFile, &RowBuffer[0], Width) == GIF_ERROR) {
++			PrintGifError();
++			exit(EXIT_FAILURE);
++		    }
++		}
++		break;
++	    case EXTENSION_RECORD_TYPE:
++		/* Skip any extension blocks in file except comments: */
++		if (DGifGetExtension(GifFile, &ExtCode, &Extension) == GIF_ERROR) {
++		    PrintGifError();
++		    exit(EXIT_FAILURE);
++		}
++		while (Extension != NULL) {
++		    if(ExtCode == COMMENT_EXT_FUNC_CODE) {
++			Extension[Extension[0]+1] = '\000';   /* Convert gif's pascal-like string */
++			Comment = (char*) realloc(Comment, strlen(Comment) + Extension[0] + 1);
++			strcat(Comment, (char*)Extension+1);
++		    }
++		    if (DGifGetExtensionNext(GifFile, &Extension) == GIF_ERROR) {
++			PrintGifError();
++			exit(EXIT_FAILURE);
++		    }
++		}
++		break;
++	    case TERMINATE_RECORD_TYPE:
++		break;
++	    default:		    /* Should be traps by DGifGetRecordType. */
++		break;
++	}
++    }
++    while (RecordType != TERMINATE_RECORD_TYPE);
++
++    while (Format[0] != '\0') {
++        if (Format[0] == '\\') {
++            Format++;
++            switch (Format[0]) {
++            case 'w': printf("%i",  Width);     break;
++            case 'h': printf("%i",  Height);    break;
++            case 'c': printf("%s",  Comment);   break;
++            case 'f': printf("%s", *FileName);  break;
++            case 'n': printf("\n");             break;
++            default:  printf("%c",  Format[0]); break;
++            }
++         }
++         else {
++            printf("%c", Format[0]);
++         }
++         Format++;
++    }
++
++    if (DGifCloseFile(GifFile) == GIF_ERROR) {
++	PrintGifError();
++	exit(EXIT_FAILURE);
++    }
++
++    return 0;
++}
+diff -Nur giflib-4.1.0/util/gifinter.c libungif-4.1.0b1/util/gifinter.c
+--- giflib-4.1.0/util/gifinter.c	Sun Sep  6 21:15:31 1998
++++ libungif-4.1.0b1/util/gifinter.c	Mon Feb  7 05:54:21 2000
+@@ -15,6 +15,10 @@
+ * 21 Dec 89 - Fix problems with -i and -s flags (Version 1.1).               *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <stdlib.h>
+ #include <alloc.h>
+@@ -72,7 +76,7 @@
+ /******************************************************************************
+ * Interpret the command line and scan the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	Error, NumFiles, ExtCode;
+     GifRecordType RecordType;
+@@ -90,13 +94,13 @@
+ 	else if (NumFiles > 1)
+ 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     if (NumFiles == 1) {
+@@ -171,6 +175,8 @@
+ 	QuitGifError(GifFileIn, GifFileOut);
+     if (EGifCloseFile(GifFileOut) == GIF_ERROR)
+ 	QuitGifError(GifFileIn, GifFileOut);
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+@@ -267,5 +273,5 @@
+     PrintGifError();
+     if (GifFileIn != NULL) DGifCloseFile(GifFileIn);
+     if (GifFileOut != NULL) EGifCloseFile(GifFileOut);
+-    exit(1);
++    exit(EXIT_FAILURE);
+ }
+diff -Nur giflib-4.1.0/util/gifinto.c libungif-4.1.0b1/util/gifinto.c
+--- giflib-4.1.0/util/gifinto.c	Sun Sep  6 18:07:38 1998
++++ libungif-4.1.0b1/util/gifinto.c	Tue Feb  8 02:00:26 2000
+@@ -14,14 +14,18 @@
+ * 22 Dec 89 - Fix problem with tmpnam (Version 1.1).                         *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <io.h>
+-#include <stdlib.h>
+ #include <alloc.h>
+ #endif /* __MSDOS__ */
+ 
+ #include <fcntl.h>
+ #include <stdio.h>
++#include <stdlib.h>
+ #include <ctype.h>
+ #include <string.h>
+ #include "gif_lib.h"
+@@ -65,7 +69,7 @@
+ * The is simply: read until EOF, then close the output, test its length, and  *
+ * if non zero then rename it.						      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	Error, NumFiles,
+ 	MinSizeFlag = FALSE, HelpFlag = FALSE;
+@@ -82,24 +86,33 @@
+ 	else if (NumFiles != 1)
+ 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     /* Open the stdin in binary mode and increase its buffer size: */
+ #ifdef __MSDOS__
+     setmode(0, O_BINARY);		  /* Make sure it is in binary mode. */
+-    if ((Fin = fdopen(0, "rb")) == NULL ||	   /* Make it into a stream: */
+-        setvbuf(Fin, NULL, _IOFBF, GIF_FILE_BUFFER_SIZE))/* Incr. stream buf.*/
+-#else
+-    if ((Fin = fdopen(0, "r")) == NULL) 	   /* Make it into a stream: */
+-#endif /* __MSDOS__ */
+-	GIF_EXIT("Failed to open input.");
++#endif
++
++    Fin = fdopen(0, "rb");   /* Make it into a stream: */
++
++    if (Fin == NULL)
++    {
++        GIF_EXIT("Failed to open input.");
++    }
++
++#ifdef __MSDOS__
++    if (setvbuf(Fin, NULL, _IOFBF, GIF_FILE_BUFFER_SIZE)) /* Incr. stream buf.*/
++    {
++        GIF_EXIT("Failed to open input.");
++    }
++#endif
+ 
+     /* Isolate the directory where our destination is, and set tmp file name */
+     /* in the very same directory.					     */
+@@ -120,13 +133,18 @@
+     if (strlen(p) == 0) p = DEFAULT_TMP_NAME;
+     strcat(FoutTmpName, p);
+ 
++    Fout = fopen(FoutTmpName, "wb");
++    if (Fout == NULL)
++    {
++	GIF_EXIT("Failed to open output.");
++    }
++
+ #ifdef __MSDOS__
+-    if ((Fout = fopen(FoutTmpName, "wb")) == NULL ||
+-	setvbuf(Fout, NULL, _IOFBF, GIF_FILE_BUFFER_SIZE))/*Incr. stream buf.*/
+-#else
+-    if ((Fout = fopen(FoutTmpName, "w")) == NULL)
+-#endif /* __MSDOS__ */
++    if (setvbuf(Fout, NULL, _IOFBF, GIF_FILE_BUFFER_SIZE)) /*Incr. stream buf.*/
++    {
+ 	GIF_EXIT("Failed to open output.");
++    }
++#endif /* __MSDOS__ */
+ 
+     while (!feof(Fin)) {
+ 	if (putc(getc(Fin), Fout) == EOF)
+@@ -156,4 +174,6 @@
+ 	unlink(FoutTmpName);
+ 	GIF_MESSAGE("File too small - not renamed.");
+     }
++
++    return 0;
+ }
+diff -Nur giflib-4.1.0/util/gifovly.c libungif-4.1.0b1/util/gifovly.c
+--- giflib-4.1.0/util/gifovly.c	Sun Sep  6 18:07:38 1998
++++ libungif-4.1.0b1/util/gifovly.c	Tue Feb  8 02:00:26 2000
+@@ -8,15 +8,20 @@
+ * History:								     *
+ * 6 May 94 - Version 1.0 by Eric Raymond.				     *
+ *****************************************************************************/
++
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <dos.h>
+ #include <alloc.h>
+-#include <stdlib.h>
+ #include <graphics.h>
+ #include <io.h>
+ #endif /* __MSDOS__ */
+ 
+ #include <stdio.h>
++#include <stdlib.h>
+ #include <string.h>
+ #include <fcntl.h>
+ #include "getarg.h"
+@@ -49,7 +54,7 @@
+ 	" t%-TransparentColor!d h%-";
+ #endif /* SYSV */
+ 
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	k;
+     GifFileType *GifFileIn, *GifFileOut = (GifFileType *)NULL;
+@@ -63,13 +68,13 @@
+ 		&HelpFlag)) != FALSE) {
+ 	GAPrintErrMsg(Error);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     if ((GifFileIn = DGifOpenFileHandle(0)) == NULL
+@@ -77,7 +82,7 @@
+ 	|| ((GifFileOut = EGifOpenFileHandle(1)) == (GifFileType *)NULL))
+     {
+ 	PrintGifError();
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     GifFileOut->SWidth = GifFileIn->SWidth;
+@@ -114,6 +119,8 @@
+ 	PrintGifError();
+     else if (DGifCloseFile(GifFileIn) == GIF_ERROR)
+ 	PrintGifError();
++
++    return 0;
+ }
+ 
+ /* gifovly.c ends here */
+diff -Nur giflib-4.1.0/util/gifpos.c libungif-4.1.0b1/util/gifpos.c
+--- giflib-4.1.0/util/gifpos.c	Sun Sep  6 18:07:38 1998
++++ libungif-4.1.0b1/util/gifpos.c	Tue Feb  8 02:00:26 2000
+@@ -16,12 +16,16 @@
+ * 6 Jul 89 - Version 1.0 by Gershon Elber.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+-#include <stdlib.h>
+ #include <alloc.h>
+ #endif /* __MSDOS__ */
+ 
+ #include <stdio.h>
++#include <stdlib.h>
+ #include <ctype.h>
+ #include <string.h>
+ #include "gif_lib.h"
+@@ -59,7 +63,7 @@
+ /******************************************************************************
+ * Interpret the command line and scan the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	Error, NumFiles, ExtCode, CodeSize, ImageNum = 0,
+ 	ScreenFlag = FALSE, ScreenWidth, ScreenHeight,
+@@ -82,13 +86,13 @@
+ 	else if (NumFiles > 1)
+ 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     if (NumFiles == 1) {
+@@ -188,6 +192,8 @@
+ 	QuitGifError(GifFileIn, GifFileOut);
+     if (EGifCloseFile(GifFileOut) == GIF_ERROR)
+ 	QuitGifError(GifFileIn, GifFileOut);
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+@@ -198,5 +204,5 @@
+     PrintGifError();
+     if (GifFileIn != NULL) DGifCloseFile(GifFileIn);
+     if (GifFileOut != NULL) EGifCloseFile(GifFileOut);
+-    exit(1);
++    exit(EXIT_FAILURE);
+ }
+diff -Nur giflib-4.1.0/util/gifrotat.c libungif-4.1.0b1/util/gifrotat.c
+--- giflib-4.1.0/util/gifrotat.c	Sun Sep  6 21:15:31 1998
++++ libungif-4.1.0b1/util/gifrotat.c	Mon Feb  7 05:54:21 2000
+@@ -14,6 +14,10 @@
+ *  2 Aug 91 - Version 1.0 by Gershon Elber.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <graphics.h>
+ #include <stdlib.h>
+@@ -81,7 +85,7 @@
+ /******************************************************************************
+ * Interpret the command line and scan the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	i, j, Size, Error, NumFiles, Col, Row, Count, ExtCode,
+ 	DstWidth, DstHeight, Width, Height,
+@@ -107,19 +111,19 @@
+ 	else if (NumFiles > 1)
+ 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     if (NumFiles == 1) {
+ 	if ((GifFile = DGifOpenFileName(*FileName)) == NULL) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+     }
+     else {
+@@ -130,7 +134,7 @@
+ #endif /* __MSDOS__ */
+ 	if ((GifFile = DGifOpenFileHandle(0)) == NULL) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+     }
+ 
+@@ -161,13 +165,13 @@
+     do {
+ 	if (DGifGetRecordType(GifFile, &RecordType) == GIF_ERROR) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+ 	switch (RecordType) {
+ 	    case IMAGE_DESC_RECORD_TYPE:
+ 		if (DGifGetImageDesc(GifFile) == GIF_ERROR) {
+ 		    PrintGifError();
+-		    exit(-1);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		Row = GifFile->Image.Top; /* Image Position relative to Screen. */
+ 		Col = GifFile->Image.Left;
+@@ -177,8 +181,8 @@
+ 		    PROGRAM_NAME, ++ImageNum, Col, Row, Width, Height);
+ 		if (GifFile->Image.Left + GifFile->Image.Width > GifFile->SWidth ||
+ 		   GifFile->Image.Top + GifFile->Image.Height > GifFile->SHeight) {
+-		    fprintf(stderr, "Image %d is not confined to screen dimension, aborted.\n");
+-		    exit(-2);
++		    fprintf(stderr, "Image %d is not confined to screen dimension, aborted.\n",ImageNum);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		if (GifFile->Image.Interlace) {
+ 		    /* Need to perform 4 passes on the images: */
+@@ -189,7 +193,7 @@
+ 			    if (DGifGetLine(GifFile, &ScreenBuffer[j][Col],
+ 				Width) == GIF_ERROR) {
+ 				PrintGifError();
+-				exit(-1);
++				exit(EXIT_FAILURE);
+ 			    }
+ 			}
+ 		}
+@@ -199,7 +203,7 @@
+ 			if (DGifGetLine(GifFile, &ScreenBuffer[Row++][Col],
+ 				Width) == GIF_ERROR) {
+ 			    PrintGifError();
+-			    exit(-1);
++			    exit(EXIT_FAILURE);
+ 			}
+ 		    }
+ 		}
+@@ -208,12 +212,12 @@
+ 		/* Skip any extension blocks in file: */
+ 		if (DGifGetExtension(GifFile, &ExtCode, &Extension) == GIF_ERROR) {
+ 		    PrintGifError();
+-		    exit(-1);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		while (Extension != NULL) {
+ 		    if (DGifGetExtensionNext(GifFile, &Extension) == GIF_ERROR) {
+ 			PrintGifError();
+-			exit(-1);
++			exit(EXIT_FAILURE);
+ 		    }
+ 		}
+ 		break;
+@@ -236,6 +240,8 @@
+     /* Perform the actual rotation and dump the image: */
+     RotateGifImage(ScreenBuffer, GifFile, Angle, ColorMap,
+ 		   DstWidth, DstHeight);
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+@@ -318,5 +324,5 @@
+ {
+     PrintGifError();
+     if (DstGifFile != NULL) EGifCloseFile(DstGifFile);
+-    exit(1);
++    exit(EXIT_FAILURE);
+ }
+diff -Nur giflib-4.1.0/util/gifrsize.c libungif-4.1.0b1/util/gifrsize.c
+--- giflib-4.1.0/util/gifrsize.c	Sun Sep  6 21:15:31 1998
++++ libungif-4.1.0b1/util/gifrsize.c	Mon Feb  7 05:54:21 2000
+@@ -18,6 +18,10 @@
+ * 3 Aug 91 - make it scale by an arbitrary size value.			     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <stdlib.h>
+ #include <alloc.h>
+@@ -78,7 +82,7 @@
+ /******************************************************************************
+ * Interpret the command line and scan the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	i, iy, last_iy, l, t, w, h, Error, NumFiles, ExtCode,
+ 	ImageNum = 0,
+@@ -105,13 +109,13 @@
+ 	else if (NumFiles > 1)
+ 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     /* If specific direction was set, set other direction to 1: */
+@@ -123,13 +127,13 @@
+     if (!YScaleFlag && ScaleFlag) YScale = Scale;
+ 
+     if (XScale > MAX_SCALE) {
+-	sprintf(s, "XScale too big, maximum scale selected instead (%d).",
++	sprintf(s, "XScale too big, maximum scale selected instead (%f).",
+ 								MAX_SCALE);
+ 	GIF_MESSAGE(s);
+ 	XScale = MAX_SCALE;
+     }
+     if (YScale > MAX_SCALE) {
+-	sprintf(s, "YScale too big, maximum scale selected instead (%d).",
++	sprintf(s, "YScale too big, maximum scale selected instead (%f).",
+ 								MAX_SCALE);
+ 	GIF_MESSAGE(s);
+ 	YScale = MAX_SCALE;
+@@ -269,6 +273,8 @@
+ 
+     free(LineOut);
+     free(LineIn);
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+@@ -305,5 +311,5 @@
+     PrintGifError();
+     if (GifFileIn != NULL) DGifCloseFile(GifFileIn);
+     if (GifFileOut != NULL) EGifCloseFile(GifFileOut);
+-    exit(1);
++    exit(EXIT_FAILURE);
+ }
+diff -Nur giflib-4.1.0/util/gifspnge.c libungif-4.1.0b1/util/gifspnge.c
+--- giflib-4.1.0/util/gifspnge.c	Sun Sep  6 18:07:38 1998
++++ libungif-4.1.0b1/util/gifspnge.c	Tue Feb  8 02:00:26 2000
+@@ -1,6 +1,6 @@
+ /*
+  * Skeleton file for generic GIF `sponge' program --- slurp a GIF into core,
+- * operate on it, spew it out again.  Most of the junk above `void main' isn't
++ * operate on it, spew it out again.  Most of the junk above `int main' isn't
+  * needed for the skeleton, but is likely to be for what you'll do with it.
+  *
+  * If you compile this, it will turn into an expensive GIF copying routine;
+@@ -16,15 +16,20 @@
+  *					Eric S. Raymond
+  *					esr@snark.thyrsus.com
+  */
++
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <dos.h>
+ #include <alloc.h>
+-#include <stdlib.h>
+ #include <graphics.h>
+ #include <io.h>
+ #endif /* __MSDOS__ */
+ 
+ #include <stdio.h>
++#include <stdlib.h>
+ #include <string.h>
+ #include <fcntl.h>
+ #include "getarg.h"
+@@ -37,7 +42,7 @@
+     _stklen = 16384;			     /* Increase default stack size. */
+ #endif /* __MSDOS__ */
+ 
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	i;
+     GifFileType *GifFileIn, *GifFileOut = (GifFileType *)NULL;
+@@ -47,7 +52,7 @@
+ 	|| ((GifFileOut = EGifOpenFileHandle(1)) == (GifFileType *)NULL))
+     {
+ 	PrintGifError();
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     /*
+@@ -79,6 +84,8 @@
+ 	PrintGifError();
+     else if (DGifCloseFile(GifFileIn) == GIF_ERROR)
+ 	PrintGifError();
++
++    return 0;
+ }
+ 
+ /* gifspnge.c ends here */
+diff -Nur giflib-4.1.0/util/giftext.c libungif-4.1.0b1/util/giftext.c
+--- giflib-4.1.0/util/giftext.c	Sun Sep  6 21:15:32 1998
++++ libungif-4.1.0b1/util/giftext.c	Mon Feb  7 05:54:21 2000
+@@ -20,6 +20,10 @@
+ * 25 Dec 89 - Add the -r flag for raw output.                                *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <stdlib.h>
+ #include <alloc.h>
+@@ -73,7 +77,7 @@
+ /******************************************************************************
+ * Interpret the command line and scan the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int i, j, ExtCode, CodeSize, Error, NumFiles, Len,
+ 	ColorMapFlag = FALSE, EncodedFlag = FALSE, LZCodesFlag = FALSE,
+@@ -94,20 +98,20 @@
+ 	else if (NumFiles > 1)
+ 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     if (NumFiles == 1) {
+ 	GifFileName = *FileName;
+ 	if ((GifFile = DGifOpenFileName(*FileName)) == NULL) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+     }
+     else {
+@@ -115,7 +119,7 @@
+ 	GifFileName = "Stdin";
+ 	if ((GifFile = DGifOpenFileHandle(0)) == NULL) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+     }
+ 
+@@ -155,13 +159,13 @@
+     do {
+ 	if (DGifGetRecordType(GifFile, &RecordType) == GIF_ERROR) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+ 	switch (RecordType) {
+ 	    case IMAGE_DESC_RECORD_TYPE:
+ 		if (DGifGetImageDesc(GifFile) == GIF_ERROR) {
+ 		    PrintGifError();
+-		    exit(-1);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		if (!RawFlag) {
+ 		    printf("\nImage #%d:\n\n\tImage Size - Left = %d, Top = %d, Width = %d, Height = %d.\n",
+@@ -196,7 +200,7 @@
+ 		if (EncodedFlag) {
+ 		    if (DGifGetCode(GifFile, &CodeSize, &CodeBlock) == GIF_ERROR) {
+ 			PrintGifError();
+-			exit(-1);
++			exit(EXIT_FAILURE);
+ 		    }
+ 		    printf("\nImage LZ compressed Codes (Code Size = %d):\n",
+ 			   CodeSize);
+@@ -204,7 +208,7 @@
+ 		    while (CodeBlock != NULL) {
+ 			if (DGifGetCodeNext(GifFile, &CodeBlock) == GIF_ERROR) {
+ 			    PrintGifError();
+-			    exit(-1);
++			    exit(EXIT_FAILURE);
+ 			}
+ 			PrintCodeBlock(GifFile, CodeBlock, FALSE);
+ 		    }
+@@ -219,7 +223,7 @@
+ 			if (DGifGetLine(GifFile, Line, GifFile->Image.Width)
+ 			    == GIF_ERROR) {
+ 			    PrintGifError();
+-			    exit(-1);
++			    exit(EXIT_FAILURE);
+ 			}
+ 			PrintPixelBlock(Line, GifFile->Image.Width, i == 0);
+ 		    }
+@@ -233,7 +237,7 @@
+ 			if (DGifGetLine(GifFile, Line, GifFile->Image.Width)
+ 			    == GIF_ERROR) {
+ 			    PrintGifError();
+-			    exit(-1);
++			    exit(EXIT_FAILURE);
+ 			}
+ 			fwrite(Line, 1, GifFile->Image.Width, stdout);
+ 		    }
+@@ -243,12 +247,12 @@
+ 		    /* Skip the image: */
+ 		    if (DGifGetCode(GifFile, &CodeSize, &CodeBlock) == GIF_ERROR) {
+ 			PrintGifError();
+-			exit(-1);
++			exit(EXIT_FAILURE);
+ 		    }
+ 		    while (CodeBlock != NULL) {
+ 			if (DGifGetCodeNext(GifFile, &CodeBlock) == GIF_ERROR) {
+ 			    PrintGifError();
+-			    exit(-1);
++			    exit(EXIT_FAILURE);
+ 			}
+ 		    }
+ 
+@@ -257,7 +261,7 @@
+ 	    case EXTENSION_RECORD_TYPE:
+ 		if (DGifGetExtension(GifFile, &ExtCode, &Extension) == GIF_ERROR) {
+ 		    PrintGifError();
+-		    exit(-1);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		if (!RawFlag) {
+ 		    putchar('\n');
+@@ -286,7 +290,7 @@
+ 		for (;;) {
+ 		    if (DGifGetExtensionNext(GifFile, &Extension) == GIF_ERROR) {
+ 			PrintGifError();
+-			exit(-1);
++			exit(EXIT_FAILURE);
+ 		    }
+ 		    if (Extension == NULL)
+ 			break;
+@@ -303,10 +307,12 @@
+ 
+     if (DGifCloseFile(GifFile) == GIF_ERROR) {
+ 	PrintGifError();
+-	exit(-1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (!RawFlag) printf("\nGif file terminated normally.\n");
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+@@ -470,7 +476,7 @@
+ 	if (Print && CrntPlace == 0) printf("\n%05lx:", CodeCount);
+ 	if (DGifGetLZCodes(GifFile, &Code) == GIF_ERROR) {
+ 	    PrintGifError();
+-	    exit(-1);
++	    exit(EXIT_FAILURE);
+ 	}
+ 	if (Print && Code >= 0)
+ 	    printf(" %03x", Code);	      /* EOF Code is returned as -1. */
+diff -Nur giflib-4.1.0/util/gifwedge.c libungif-4.1.0b1/util/gifwedge.c
+--- giflib-4.1.0/util/gifwedge.c	Sun Sep  6 21:15:32 1998
++++ libungif-4.1.0b1/util/gifwedge.c	Mon Feb  7 05:54:21 2000
+@@ -16,6 +16,10 @@
+ * 4 Jan 90 - Version 1.0 by Gershon Elber.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <stdlib.h>
+ #include <alloc.h>
+@@ -72,7 +76,7 @@
+ /******************************************************************************
+ * Interpret the command line and scan the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	i, j, l, c, Error, LevelStep, LogNumLevels,
+ 	Count = 0, LevelsFlag = FALSE, SizeFlag = FALSE, HelpFlag = FALSE;
+@@ -86,13 +90,13 @@
+ 		&HelpFlag)) != FALSE) {
+ 	GAPrintErrMsg(Error);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     /* Make sure the number of levels is power of 2 (up to 32 levels.). */
+@@ -157,6 +161,8 @@
+ 
+     if (EGifCloseFile(GifFile) == GIF_ERROR)
+ 	QuitGifError(GifFile);
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+@@ -166,5 +172,5 @@
+ {
+     PrintGifError();
+     if (GifFile != NULL) DGifCloseFile(GifFile);
+-    exit(1);
++    exit(EXIT_FAILURE);
+ }
+diff -Nur giflib-4.1.0/util/icon2gif.c libungif-4.1.0b1/util/icon2gif.c
+--- giflib-4.1.0/util/icon2gif.c	Sun Sep  6 21:15:32 1998
++++ libungif-4.1.0b1/util/icon2gif.c	Mon Feb  7 05:54:21 2000
+@@ -9,6 +9,10 @@
+ * 15 Sep 92 - Version 1.0 by Eric Raymond.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <dos.h>
+ #include <alloc.h>
+@@ -71,7 +75,7 @@
+ /******************************************************************************
+ * Main Sequence 							      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	i, Error, NumFiles,
+ 	DisasmFlag = FALSE, HelpFlag = FALSE, TextLineFlag = FALSE;
+@@ -83,25 +87,25 @@
+ 		&HelpFlag, &NumFiles, &FileNames)) != FALSE) {
+ 	GAPrintErrMsg(Error);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     if (!DisasmFlag && NumFiles > 1) {
+ 	GIF_MESSAGE("Error in command line parsing - one  text input please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (!DisasmFlag && TextLineFlag) {
+ 	GIF_MESSAGE("Error in command line parsing - -t invalid without -d.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+ 
+@@ -120,7 +124,7 @@
+ 	    if ((fp = fopen(FileNames[i], "r")) == (FILE *)NULL)
+ 	    {
+ 		(void) fprintf(stderr, "Can't open %s\n", FileNames[i]);
+-		exit(2);
++		exit(EXIT_FAILURE);
+ 	    }
+ 
+ 	    if (DisasmFlag)
+@@ -135,6 +139,8 @@
+ 
+ 	    (void) fclose(fp);
+ 	}
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+@@ -149,6 +155,7 @@
+ 	*ColorMap = GlobalColorMap;
+     char GlobalColorKeys[PRINTABLES], LocalColorKeys[PRINTABLES],
+ 	*KeyTable = GlobalColorKeys;
++    int red, green, blue;
+ 
+     char buf[BUFSIZ * 2], InclusionFile[64];
+     GifFileType *GifFileOut;
+@@ -203,7 +210,7 @@
+ 	    if (n > 256 || n < 0 || n != (1 << ResBits))
+ 	    {
+ 		PARSE_ERROR("Invalid color resolution value.");
+-		exit(1);
++		exit(EXIT_FAILURE);
+ 	    }
+ 
+ 	    GifFileOut->SColorResolution = ResBits;
+@@ -224,7 +231,7 @@
+ 	    if (GifFileOut->SColorMap != NULL)
+ 	    {
+ 		PARSE_ERROR("You've already declared a global color map.");
+-		exit(1);
++		exit(EXIT_FAILURE);
+ 	    }
+ 
+ 	    ColorMapSize = 0;
+@@ -238,7 +245,7 @@
+ 	    if (NewImage == NULL)
+ 	    {
+ 		PARSE_ERROR("No previous image declaration.");
+-		exit(1);
++		exit(EXIT_FAILURE);
+ 	    }
+ 
+ 	    ColorMapSize = 0;
+@@ -248,11 +255,11 @@
+ 	}
+ 
+ 	else if (sscanf(buf, "	rgb %d %d %d is %c",
+-		   &ColorMap[ColorMapSize].Red,
+-		   &ColorMap[ColorMapSize].Green,
+-		   &ColorMap[ColorMapSize].Blue,
+-		   &KeyTable[ColorMapSize]) == 4)
++		   &red, &green, &blue, &KeyTable[ColorMapSize]) == 4)
+ 	{
++	    ColorMap[ColorMapSize].Red = red;
++	    ColorMap[ColorMapSize].Green = green;
++	    ColorMap[ColorMapSize].Blue = blue;
+ 	    ColorMapSize++;
+ 	}
+ 
+@@ -265,7 +272,7 @@
+ 	    if (NewMap == (ColorMapObject *)NULL)
+ 	    {
+ 		PARSE_ERROR("Out of memory while allocating new color map.");
+-		exit(1);
++		exit(EXIT_FAILURE);
+ 	    }
+ 
+ 	    if (NewImage)
+@@ -287,7 +294,7 @@
+ 		|| DGifSlurp(Inclusion) == GIF_ERROR)
+ 	    {
+ 		PARSE_ERROR("Inclusion read failed.");
+-		exit(1);
++		exit(EXIT_FAILURE);
+ 	    }
+ 
+ 	    if (DoTranslation = (GifFileOut->SColorMap!=(ColorMapObject*)NULL))
+@@ -300,7 +307,7 @@
+ 		if (UnionMap == NULL)
+ 		{
+ 		    PARSE_ERROR("Inclusion failed --- global map conflict.");
+-		    exit(1);
++		    exit(EXIT_FAILURE);
+ 		}
+ 
+ 		FreeMapObject(GifFileOut->SColorMap);
+@@ -314,7 +321,7 @@
+ 		if ((NewImage = MakeSavedImage(GifFileOut, CopyFrom)) == NULL)
+ 		{
+ 		    PARSE_ERROR("Inclusion failed --- out of memory.");
+-		    exit(1);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		else if (DoTranslation)
+ 		    ApplyTranslation(NewImage, Translation);
+@@ -339,7 +346,7 @@
+ 	    if ((NewImage = MakeSavedImage(GifFileOut, NULL)) == (SavedImage *)NULL)
+ 	    {
+ 		PARSE_ERROR("Out of memory while allocating image block.");
+-		exit(1);
++		exit(EXIT_FAILURE);
+ 	    }
+ 
+ 	    /* use global table unless user specifies a local one */
+@@ -355,7 +362,7 @@
+ 	{
+ 	    (void) fputs(buf, stderr);
+ 	    PARSE_ERROR("Syntax error in header block.");
+-	    exit(1);
++	    exit(EXIT_FAILURE);
+ 	}
+ 
+ 	/*
+@@ -385,7 +392,7 @@
+ 	    if ((Raster = (GifPixelType *) malloc(sizeof(GifPixelType) * NewImage->ImageDesc.Width * NewImage->ImageDesc.Height))
+ 		== NULL) {
+ 		PARSE_ERROR("Failed to allocate raster block, aborted.");
+-		exit(1);
++		exit(EXIT_FAILURE);
+ 	    }
+ 
+ 	    if (!GifQuietPrint)
+@@ -402,7 +409,7 @@
+ 		for (j = 0; j < NewImage->ImageDesc.Width; j++)
+ 		    if ((c = fgetc(txtin)) == EOF) {
+ 			PARSE_ERROR("input file ended prematurely.");
+-			exit(1);
++			exit(EXIT_FAILURE);
+ 		    }
+ 		    else if (c == '\n')
+ 		    {
+@@ -415,7 +422,7 @@
+ 			*cp++ = (dp - KeyTable);
+ 		    else {
+ 			PARSE_ERROR("Invalid pixel value.");
+-			exit(1);
++			exit(EXIT_FAILURE);
+ 		    }
+ 
+ 		if (!GifQuietPrint)
+@@ -425,7 +432,7 @@
+ 	    if (!GifQuietPrint)
+ 		putc('\n', stderr);
+ 
+-	    NewImage->RasterBits = Raster;
++	    NewImage->RasterBits = (char *) Raster;
+ 	}
+ 	else if (sscanf(buf, "comment"))
+ 	{
+@@ -441,7 +448,7 @@
+ 		    Len = EscapeString(buf, buf);
+ 		    if (AddExtensionBlock(NewImage, Len, buf) == GIF_ERROR) {
+ 			PARSE_ERROR("out of memory while adding comment block.");
+-			exit(1);
++			exit(EXIT_FAILURE);
+ 		    }
+ 		}
+ 	}
+@@ -459,7 +466,7 @@
+ 		    Len = EscapeString(buf, buf);
+ 		    if (AddExtensionBlock(NewImage, Len, buf) == GIF_ERROR) {
+ 			PARSE_ERROR("out of memory while adding plaintext block.");
+-			exit(1);
++			exit(EXIT_FAILURE);
+ 		    }
+ 		}
+ 	}
+@@ -477,7 +484,7 @@
+ 		    Len = EscapeString(buf, buf);
+ 		    if (AddExtensionBlock(NewImage, Len, buf) == GIF_ERROR) {
+ 			PARSE_ERROR("out of memory while adding extension block.");
+-			exit(1);
++			exit(EXIT_FAILURE);
+ 		    }
+ 		}
+ 	}
+@@ -485,7 +492,7 @@
+ 	{
+ 	    (void) fputs(buf, stderr);
+ 	    PARSE_ERROR("Syntax error in image description.");
+-	    exit(1);
++	    exit(EXIT_FAILURE);
+ 	}
+     }
+ 
+@@ -506,14 +513,14 @@
+     if (fdin == -1) {
+ 	if ((GifFile = DGifOpenFileName(FileName)) == NULL) {
+ 	    PrintGifError();
+-	    exit(1);
++	    exit(EXIT_FAILURE);
+ 	}
+     }
+     else {
+ 	/* Use stdin instead: */
+ 	if ((GifFile = DGifOpenFileHandle(fdin)) == NULL) {
+ 	    PrintGifError();
+-	    exit(1);
++	    exit(EXIT_FAILURE);
+ 	}
+     }
+ 
+@@ -531,7 +538,7 @@
+ 	    (void) fprintf(stderr,
+ 			   "%s: global color map has unprintable pixels\n",
+ 			   FileName);
+-	    exit(1);
++	    exit(EXIT_FAILURE);
+ 	}
+ 
+ 	printf("screen map\n");
+@@ -548,13 +555,13 @@
+     do {
+ 	if (DGifGetRecordType(GifFile, &RecordType) == GIF_ERROR) {
+ 	    PrintGifError();
+-	    exit(1);
++	    exit(EXIT_FAILURE);
+ 	}
+ 	switch (RecordType) {
+ 	case IMAGE_DESC_RECORD_TYPE:
+ 	    if (DGifGetImageDesc(GifFile) == GIF_ERROR) {
+ 		PrintGifError();
+-		exit(1);
++		exit(EXIT_FAILURE);
+ 	    }
+ 	    printf("image # %d\nimage left %d\nimage top %d\n",
+ 		   ImageNum++,
+@@ -569,7 +576,7 @@
+ 		    (void) fprintf(stderr,
+ 				   "%s: global color map has unprintable pixels\n",
+ 				   FileName);
+-		    exit(1);
++		    exit(EXIT_FAILURE);
+ 		}
+ 
+ 		printf("image map\n");
+@@ -592,7 +599,7 @@
+ 		if (DGifGetLine(GifFile, Line, GifFile->Image.Width)
+ 		    == GIF_ERROR) {
+ 		    PrintGifError();
+-		    exit(1);
++		    exit(EXIT_FAILURE);
+ 		}
+ 		for (cp = Line; cp < Line + GifFile->Image.Width; cp++)
+ 		    putchar(NameTable[*cp]);
+@@ -605,7 +612,7 @@
+ 	case EXTENSION_RECORD_TYPE:
+ 	    if (DGifGetExtension(GifFile, &ExtCode, &Extension) == GIF_ERROR) {
+ 		PrintGifError();
+-		exit(1);
++		exit(EXIT_FAILURE);
+ 	    }
+ 
+ 	    if (ExtCode == COMMENT_EXT_FUNC_CODE)
+@@ -623,7 +630,7 @@
+ 
+ 		if (DGifGetExtensionNext(GifFile, &Extension) == GIF_ERROR) {
+ 		    PrintGifError();
+-		    exit(1);
++		    exit(EXIT_FAILURE);
+ 		}
+ 	    }
+ 	    printf("end\n\n");
+@@ -651,7 +658,7 @@
+ 
+     if (DGifCloseFile(GifFile) == GIF_ERROR) {
+ 	PrintGifError();
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ }
+ 
+@@ -756,5 +763,5 @@
+     PrintGifError();
+     if (GifFileIn != NULL) DGifCloseFile(GifFileIn);
+     if (GifFileOut != NULL) EGifCloseFile(GifFileOut);
+-    exit(1);
++    exit(EXIT_FAILURE);
+ }
+diff -Nur giflib-4.1.0/util/raw2gif.c libungif-4.1.0b1/util/raw2gif.c
+--- giflib-4.1.0/util/raw2gif.c	Sun Sep  6 21:15:32 1998
++++ libungif-4.1.0b1/util/raw2gif.c	Mon Feb  7 05:54:21 2000
+@@ -14,6 +14,10 @@
+ * 15 Oct 89 - Version 1.0 by Gershon Elber.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <dos.h>
+ #include <alloc.h>
+@@ -85,7 +89,7 @@
+ /******************************************************************************
+ * Interpret the command line, prepar global data and call the Gif routines.   *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	Error, NumFiles, ImageWidth, ImageHeight, Dummy, Red, Green, Blue,
+ 	ColorMapSize, InFileHandle,
+@@ -105,24 +109,24 @@
+ 	else if (NumFiles > 1)
+ 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     if (ColorMapFlag) {
+ 	/* Read color map from given file: */
+ 	if ((InColorMapFile = fopen(ColorMapFile, "rt")) == NULL) {
+ 	    GIF_MESSAGE("Failed to open COLOR MAP file (not exists!?).");
+-	    exit(2);
++	    exit(EXIT_FAILURE);
+ 	}
+ 	if ((ColorMap = MakeMapObject(256, NULL)) == NULL) {
+ 	    GIF_MESSAGE("Failed to allocate bitmap, aborted.");
+-	    exit(3);
++	    exit(EXIT_FAILURE);
+ 	}
+ 
+ 	for (ColorMapSize = 0;
+@@ -146,7 +150,7 @@
+ 	if ((InFileHandle = open(*FileName, O_RDONLY)) == -1) {
+ #endif /* __MSDOS__ */
+ 	    GIF_MESSAGE("Failed to open RAW image file (not exists!?).");
+-	    exit(2);
++	    exit(EXIT_FAILURE);
+ 	}
+ 	dup2(InFileHandle, 0);		       /* Make stdin from this file. */
+     }
+@@ -162,6 +166,8 @@
+ 
+     /* Conver Raw image from stdin to Gif file in stdout: */
+     Raw2Gif(ImageWidth, ImageHeight, ColorMap);
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+@@ -178,7 +184,7 @@
+     if ((ScanLine = (GifPixelType *) malloc(sizeof(GifPixelType) * ImageWidth))
+ 								== NULL) {
+ 	GIF_MESSAGE("Failed to allocate scan line, aborted.");
+-	exit(3);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if ((GifFile = EGifOpenFileHandle(1)) == NULL) {	   /* Gif to stdout. */
+@@ -206,7 +212,7 @@
+ 	/* so. If not - must read one byte at a time, and coerce to pixel.   */
+ 	if (fread(ScanLine, 1, ImageWidth, stdin) != (unsigned)ImageWidth) {
+ 	    GIF_MESSAGE("RAW input file ended prematurely.");
+-	    exit(3);
++	    exit(EXIT_FAILURE);
+ 	}
+ 
+ 	for (j = 0; j < ImageWidth; j++)
+diff -Nur giflib-4.1.0/util/rgb2gif.c libungif-4.1.0b1/util/rgb2gif.c
+--- giflib-4.1.0/util/rgb2gif.c	Sun Sep  6 21:15:33 1998
++++ libungif-4.1.0b1/util/rgb2gif.c	Mon Feb  7 20:24:06 2000
+@@ -15,6 +15,10 @@
+ * 15 Jun 91 - Version 1.0 by Gershon Elber.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <graphics.h>
+ #include <stdlib.h>
+@@ -83,7 +87,7 @@
+ /******************************************************************************
+ * Interpret the command line and scan the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	Error, NumFiles, Width, Height, SizeFlag;
+     char **FileName = NULL;
+@@ -101,13 +105,13 @@
+ 	else if (NumFiles > 1)
+ 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     ColorMapSize = 1 << ExpNumOfColors;
+@@ -135,6 +139,8 @@
+     free((char *) BlueBuffer);
+ 
+     SaveGif(OutputBuffer, OutputColorMap, ExpNumOfColors, Width, Height);
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+@@ -171,11 +177,7 @@
+ 	char OneFileName[80];
+ 
+ 	if (OneFileFlag) {
+-#ifdef __MSDOS__
+ 	    if ((f[0] = fopen(FileName, "rb")) == NULL)
+-#else
+-	    if ((f[0] = fopen(FileName, "r")) == NULL)
+-#endif /* __MSDOS__ */
+ 		GIF_EXIT("Can't open input file name.");
+ 	}
+ 	else {
+@@ -185,11 +187,7 @@
+ 		strcpy(OneFileName, FileName);
+ 		strcat(OneFileName, Postfixes[i]);
+ 
+-#ifdef __MSDOS__
+ 		if ((f[i] = fopen(OneFileName, "rb")) == NULL)
+-#else
+-		if ((f[i] = fopen(OneFileName, "r")) == NULL)
+-#endif /* __MSDOS__ */
+ 		    GIF_EXIT("Can't open input file name.");
+ 	    }
+ 	}
+@@ -290,5 +288,5 @@
+ {
+     PrintGifError();
+     if (GifFile != NULL) EGifCloseFile(GifFile);
+-    exit(1);
++    exit(EXIT_FAILURE);
+ }
+diff -Nur giflib-4.1.0/util/rle2gif.c libungif-4.1.0b1/util/rle2gif.c
+--- giflib-4.1.0/util/rle2gif.c	Sun Sep  6 18:07:39 1998
++++ libungif-4.1.0b1/util/rle2gif.c	Tue Feb  8 02:00:26 2000
+@@ -13,9 +13,12 @@
+ * 5 Jan 90 - Version 1.0 by Gershon Elber.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <graphics.h>
+-#include <stdlib.h>
+ #include <alloc.h>
+ #include <io.h>
+ #include <dos.h>
+@@ -23,6 +26,7 @@
+ #endif /* __MSDOS__ */
+ 
+ #include <stdio.h>
++#include <stdlib.h>
+ #include <ctype.h>
+ #include <string.h>
+ #include <fcntl.h>
+@@ -78,7 +82,7 @@
+ /******************************************************************************
+ * Interpret the command line and scan the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	i, j, Error, NumFiles, Width, Height;
+     char **FileName = NULL;
+@@ -95,13 +99,13 @@
+ 	else if (NumFiles > 1)
+ 	    GIF_MESSAGE("Error in command line parsing - one GIF file please.");
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     ColorMapSize = 1 << ExpNumOfColors;
+@@ -128,6 +132,8 @@
+     free((char *) BlueBuffer);
+ 
+     SaveGif(OutputBuffer, OutputColorMap, ExpNumOfColors, Width, Height);
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+@@ -228,5 +234,5 @@
+ {
+     PrintGifError();
+     if (GifFile != NULL) EGifCloseFile(GifFile);
+-    exit(1);
++    exit(EXIT_FAILURE);
+ }
+diff -Nur giflib-4.1.0/util/text2gif.c libungif-4.1.0b1/util/text2gif.c
+--- giflib-4.1.0/util/text2gif.c	Sun Sep  6 21:15:33 1998
++++ libungif-4.1.0b1/util/text2gif.c	Mon Feb  7 05:54:21 2000
+@@ -17,6 +17,10 @@
+ * 3 May 90 - Version 1.0 by Gershon Elber.				     *
+ *****************************************************************************/
+ 
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
+ #ifdef __MSDOS__
+ #include <stdlib.h>
+ #include <alloc.h>
+@@ -80,7 +84,7 @@
+ /******************************************************************************
+ * Interpret the command line and generate the given GIF file.		      *
+ ******************************************************************************/
+-void main(int argc, char **argv)
++int main(int argc, char **argv)
+ {
+     int	i, j, l, Error, ImageWidth, ImageHeight, NumOfLines, LogNumLevels,
+ 	NumLevels, ClrMapSizeFlag = FALSE, ColorMapSize = 1, ColorFlag = FALSE,
+@@ -99,13 +103,13 @@
+ 		&HelpFlag)) != FALSE) {
+ 	GAPrintErrMsg(Error);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(1);
++	exit(EXIT_FAILURE);
+     }
+ 
+     if (HelpFlag) {
+ 	fprintf(stderr, VersionStr);
+ 	GAPrintHowTo(CtrlStr);
+-	exit(0);
++	exit(EXIT_SUCCESS);
+     }
+ 
+     if (ForeGroundIndex > 255 || ForeGroundIndex < 1)
+@@ -189,6 +193,8 @@
+ 
+     if (EGifCloseFile(GifFile) == GIF_ERROR)
+ 	QuitGifError(GifFile);
++
++    return 0;
+ }
+ 
+ /******************************************************************************
+@@ -222,5 +228,5 @@
+ {
+     PrintGifError();
+     if (GifFile != NULL) EGifCloseFile(GifFile);
+-    exit(1);
++    exit(EXIT_FAILURE);
+ }
