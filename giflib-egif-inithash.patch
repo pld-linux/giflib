@@ -1,0 +1,17 @@
+From http://www.develop-help.com/imager/giflib.patch
+(only one hunk, the second is already in fixes-from-libungif patch)
+--- giflib-4.1.0/lib/egif_lib.c.orig	2003-10-25 19:23:35.000000000 +0200
++++ giflib-4.1.0/lib/egif_lib.c	2003-10-25 19:24:25.049338168 +0200
+@@ -177,6 +177,12 @@
+         _GifError = E_GIF_ERR_NOT_ENOUGH_MEM;
+         return NULL;
+     }
++    if ((Private->HashTable = _InitHashTable()) == NULL) {
++        free(GifFile);
++        free(Private);
++        _GifError = E_GIF_ERR_NOT_ENOUGH_MEM;
++        return NULL;
++    }
+ 
+     GifFile->Private = (VoidPtr) Private;
+     Private->FileHandle = 0;

@@ -7,7 +7,7 @@ Summary(uk):	Б╕бл╕отека для роботи з GIF-файлами
 Name:		giflib
 Version:	4.1.0
 %define		so_ver	4.1.0
-Release:	3
+Release:	4
 License:	X Consortium-like
 Group:		Libraries
 # not original URL, but working
@@ -16,6 +16,7 @@ Source0:	http://www.netsw.org/graphic/bitmap/formats/gif/giflib/%{name}-%{versio
 Source1:	http://www.mif.pg.gda.pl/homepages/ankry/man-PLD/libungif-man-pages.tar.bz2
 # Source1-md5: 580c50403ed8f7e678ed04b3e0d712f3
 Patch0:		%{name}-fixes-from-libungif.patch
+Patch1:		%{name}-egif-inithash.patch
 URL:		http://prtr-13.ucsc.edu/~badger/software/libungif/giflib.shtml
 BuildRequires:	XFree86-devel
 BuildRequires:	autoconf
@@ -145,10 +146,10 @@ GIF.
 
 %prep
 %setup -q
-%patch -p1
+%patch0 -p1
+%patch1 -p1
 
 %build
-rm -f missing
 %{__libtoolize}
 %{__aclocal}
 %{__autoheader}
@@ -161,7 +162,8 @@ CFLAGS="%{rpmcflags} -fwritable-strings"; export CFLAGS
 %install
 rm -rf $RPM_BUILD_ROOT
 
-%{__make} DESTDIR="$RPM_BUILD_ROOT" install
+%{__make} install \
+	DESTDIR=$RPM_BUILD_ROOT
 
 ln -sf libgif.so.%{so_ver} $RPM_BUILD_ROOT%{_libdir}/libungif.so.%{so_ver}
 ln -sf libgif.so.%{so_ver} $RPM_BUILD_ROOT%{_libdir}/libungif.so.4
