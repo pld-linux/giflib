@@ -148,8 +148,8 @@ GIF.
 %build
 rm -f missing
 %{__libtoolize}
-aclocal
-autoheader
+%{__aclocal}
+%{__autoheader}
 %{__autoconf}
 %{__automake}
 CFLAGS="%{rpmcflags} -fwritable-strings"; export CFLAGS
