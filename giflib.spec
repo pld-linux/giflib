@@ -12,6 +12,7 @@ License:	X Consortium-like
 Group:		Libraries
 # not original URL, but working
 Source0:	http://www.netsw.org/graphic/bitmap/formats/gif/giflib/%{name}-%{version}.tar.gz
+# Source0-md5:	f70e8fe2dd57815bd2740aa88aa32f2c
 Source1:	http://www.mif.pg.gda.pl/homepages/ankry/man-PLD/libungif-man-pages.tar.bz2
 # Source1-md5: 580c50403ed8f7e678ed04b3e0d712f3
 Patch0:		%{name}-fixes-from-libungif.patch
