@@ -50,7 +50,7 @@ Biblioteca compartilhada para carga e gravaГЦo de arquivos GIF.
 Б╕бл╕отека для загрузки та збереження GIF-файл╕в.
 
 %package devel
-Summary:	GIF-manipulation library header files and documentation.
+Summary:	GIF-manipulation library header files and documentation
 Summary(es):	Archivos de inclusiСn, bibliotecas para biblioteca de manipulaciСn de GIF
 Summary(pl):	Pliki nagЁСwkowe oraz dokumentacja do formatu GIF
 Summary(pt_BR):	Arquivos de inclusЦo, bibliotecas para biblioteca de manipulaГЦo de GIF
@@ -89,7 +89,7 @@ GIF.
 формат╕ GIF.
 
 %package static
-Summary:	GIF-manipulation static library.
+Summary:	GIF-manipulation static library
 Summary(pl):	Biblioteki statyczne do obrСbki plikСw GIF
 Summary(pt_BR):	Bibliotecas estАticas para desenvolvimento com libungif
 Summary(ru):	Статические библиотеки GIF-библиотеки
