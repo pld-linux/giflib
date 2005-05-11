@@ -20,8 +20,9 @@ BuildRequires:	autoconf >= 2.50
 BuildRequires:	automake
 BuildRequires:	libtool
 BuildRequires:	netpbm-devel
+BuildRequires:	rpmbuild(macros) >= 1.213
 BuildRequires:	urt-devel
-%ifarch amd64 ia64 ppc64 sparc64
+%ifarch %{x8664} ia64 ppc64 s390x sparc64
 Provides:	libungif.so.4()(64bit)
 %else
 Provides:	libungif.so.4
