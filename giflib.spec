@@ -5,15 +5,14 @@ Summary(pt_BR):	Biblioteca de manipulaГЦo de arquivos GIF
 Summary(ru):	Библиотека для работы с GIF-файлами
 Summary(uk):	Б╕бл╕отека для роботи з GIF-файлами
 Name:		giflib
-Version:	4.1.3
+Version:	4.1.4
 Release:	1
 License:	X Consortium-like
 Group:		Libraries
 Source0:	http://dl.sourceforge.net/libungif/%{name}-%{version}.tar.bz2
-# Source0-md5:	22efc9599ccf91d288374dcf0679abf1
+# Source0-md5:	827d338961482a986f39c7f114531636
 Source1:	http://www.mif.pg.gda.pl/homepages/ankry/man-PLD/libungif-man-pages.tar.bz2
 # Source1-md5:	580c50403ed8f7e678ed04b3e0d712f3
-Patch0:		%{name}-egif-inithash.patch
 URL:		http://sourceforge.net/projects/libungif/
 BuildRequires:	XFree86-devel
 BuildRequires:	autoconf >= 2.50
@@ -147,7 +146,6 @@ GIF.
 
 %prep
 %setup -q
-%patch0 -p1
 
 %build
 %{__libtoolize}
