@@ -1,0 +1,2 @@
+- updated to 4.1.4, removed obsolete egif-inithash patch
+  [fixes CVE-2005-2974, CVE-2005-3350]
