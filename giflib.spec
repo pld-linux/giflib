@@ -62,6 +62,7 @@ Summary(ru):	Хедеры, библиотеки и документация GIF-библиотеки
 Summary(uk):	Хедери, б╕бл╕отеки та документац╕я GIF-б╕бл╕отеки
 Group:		Development/Libraries
 Requires:	%{name} = %{version}-%{release}
+Requires:	XFree86-devel
 Provides:	libungif-devel
 Obsoletes:	libungif-devel
 Obsoletes:	libungif4-devel
