@@ -6,7 +6,7 @@ Summary(ru):	Библиотека для работы с GIF-файлами
 Summary(uk):	Б╕бл╕отека для роботи з GIF-файлами
 Name:		giflib
 Version:	4.1.4
-Release:	2
+Release:	3
 License:	X Consortium-like
 Group:		Libraries
 Source0:	http://dl.sourceforge.net/libungif/%{name}-%{version}.tar.bz2
