@@ -6,7 +6,7 @@ Summary(ru):	Библиотека для работы с GIF-файлами
 Summary(uk):	Б╕бл╕отека для роботи з GIF-файлами
 Name:		giflib
 Version:	4.1.4
-Release:	4
+Release:	5
 License:	X Consortium-like
 Group:		Libraries
 Source0:	http://dl.sourceforge.net/libungif/%{name}-%{version}.tar.bz2
@@ -16,13 +16,13 @@ Source1:	http://www.mif.pg.gda.pl/homepages/ankry/man-PLD/libungif-man-pages.tar
 Patch0:		%{name}-link.patch
 Patch1:		http://users.own-hero.net/~decoder/fuzzyocr/giftext-segfault.patch
 URL:		http://sourceforge.net/projects/libungif/
+BuildRequires:	XFree86-devel
 BuildRequires:	autoconf >= 2.59-9
 BuildRequires:	automake
 BuildRequires:	libtool
 BuildRequires:	netpbm-devel
 BuildRequires:	rpmbuild(macros) >= 1.213
 BuildRequires:	urt-devel
-BuildRequires:	xorg-lib-libX11-devel
 %ifarch %{x8664} ia64 ppc64 s390x sparc64
 Provides:	libungif.so.4()(64bit)
 %else
@@ -64,7 +64,7 @@ Summary(ru):	Хедеры, библиотеки и документация GIF-библиотеки
 Summary(uk):	Хедери, б╕бл╕отеки та документац╕я GIF-б╕бл╕отеки
 Group:		Development/Libraries
 Requires:	%{name} = %{version}-%{release}
-Requires:	xorg-lib-libX11-devel
+Requires:	XFree86-devel
 Provides:	libungif-devel
 Obsoletes:	libungif-devel
 Obsoletes:	libungif4-devel
