@@ -6,7 +6,7 @@ Summary(ru):	Библиотека для работы с GIF-файлами
 Summary(uk):	Б╕бл╕отека для роботи з GIF-файлами
 Name:		giflib
 Version:	4.1.4
-Release:	3
+Release:	4
 License:	X Consortium-like
 Group:		Libraries
 Source0:	http://dl.sourceforge.net/libungif/%{name}-%{version}.tar.bz2
@@ -14,6 +14,7 @@ Source0:	http://dl.sourceforge.net/libungif/%{name}-%{version}.tar.bz2
 Source1:	http://www.mif.pg.gda.pl/homepages/ankry/man-PLD/libungif-man-pages.tar.bz2
 # Source1-md5:	580c50403ed8f7e678ed04b3e0d712f3
 Patch0:		%{name}-link.patch
+Patch1:		http://users.own-hero.net/~decoder/fuzzyocr/giftext-segfault.patch
 URL:		http://sourceforge.net/projects/libungif/
 BuildRequires:	autoconf >= 2.59-9
 BuildRequires:	automake
@@ -90,8 +91,8 @@ giflib для загрузки и сохранения изображений в формате GIF.
 
 %description devel -l uk
 Хедери та б╕бл╕отеки, необх╕дн╕ для розробки програм, що
-використовують giflib для загрузки та збереження зображень у
-формат╕ GIF.
+використовують giflib для загрузки та збереження зображень у формат╕
+GIF.
 
 %package static
 Summary:	GIF-manipulation static library
@@ -149,6 +150,8 @@ GIF.
 %prep
 %setup -q
 %patch0 -p1
+cd util
+%patch1 -p0
 
 %build
 %{__libtoolize}
