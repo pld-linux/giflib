@@ -1,3 +1,7 @@
+#
+# Conditional build:
+%bcond_without  x       # without X11
+#
 Summary:	GIF-manipulation library
 Summary(es):	Biblioteca de manipulación de archivos GIF
 Summary(pl):	Biblioteka do obróbki plików GIF
@@ -22,7 +26,7 @@ BuildRequires:	libtool
 BuildRequires:	netpbm-devel
 BuildRequires:	rpmbuild(macros) >= 1.213
 BuildRequires:	urt-devel
-BuildRequires:	xorg-lib-libX11-devel
+%{?with_x:BuildRequires:	xorg-lib-libX11-devel}
 %ifarch %{x8664} ia64 ppc64 s390x sparc64
 Provides:	libungif.so.4()(64bit)
 %else
@@ -159,7 +163,7 @@ cd util
 %{__autoheader}
 %{__autoconf}
 %{__automake}
-%configure
+%configure %{!?with_x:--without-x}
 %{__make}
 
 %install
