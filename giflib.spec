@@ -1,6 +1,6 @@
 #
 # Conditional build:
-%bcond_without  x       # without X11
+%bcond_without	x	# without X11
 #
 Summary:	GIF-manipulation library
 Summary(es):	Biblioteca de manipulación de archivos GIF
@@ -163,7 +163,8 @@ cd util
 %{__autoheader}
 %{__autoconf}
 %{__automake}
-%configure %{!?with_x:--without-x}
+%configure \
+	%{!?with_x:--without-x}
 %{__make}
 
 %install
