@@ -3,11 +3,11 @@
 %bcond_without	x	# without X11
 #
 Summary:	GIF-manipulation library
-Summary(es.UTF-8):   Biblioteca de manipulación de archivos GIF
-Summary(pl.UTF-8):   Biblioteka do obróbki plików GIF
-Summary(pt_BR.UTF-8):   Biblioteca de manipulação de arquivos GIF
-Summary(ru.UTF-8):   Библиотека для работы с GIF-файлами
-Summary(uk.UTF-8):   Бібліотека для роботи з GIF-файлами
+Summary(es.UTF-8):	Biblioteca de manipulación de archivos GIF
+Summary(pl.UTF-8):	Biblioteka do obróbki plików GIF
+Summary(pt_BR.UTF-8):	Biblioteca de manipulação de arquivos GIF
+Summary(ru.UTF-8):	Библиотека для работы с GIF-файлами
+Summary(uk.UTF-8):	Бібліотека для роботи з GIF-файлами
 Name:		giflib
 Version:	4.1.4
 Release:	4
@@ -61,11 +61,11 @@ Biblioteca compartilhada para carga e gravação de arquivos GIF.
 
 %package devel
 Summary:	GIF-manipulation library header files and documentation
-Summary(es.UTF-8):   Archivos de inclusión, bibliotecas para biblioteca de manipulación de GIF
-Summary(pl.UTF-8):   Pliki nagłówkowe oraz dokumentacja do formatu GIF
-Summary(pt_BR.UTF-8):   Arquivos de inclusão, bibliotecas para biblioteca de manipulação de GIF
-Summary(ru.UTF-8):   Хедеры, библиотеки и документация GIF-библиотеки
-Summary(uk.UTF-8):   Хедери, бібліотеки та документація GIF-бібліотеки
+Summary(es.UTF-8):	Archivos de inclusión, bibliotecas para biblioteca de manipulación de GIF
+Summary(pl.UTF-8):	Pliki nagłówkowe oraz dokumentacja do formatu GIF
+Summary(pt_BR.UTF-8):	Arquivos de inclusão, bibliotecas para biblioteca de manipulação de GIF
+Summary(ru.UTF-8):	Хедеры, библиотеки и документация GIF-библиотеки
+Summary(uk.UTF-8):	Хедери, бібліотеки та документація GIF-бібліотеки
 Group:		Development/Libraries
 Requires:	%{name} = %{version}-%{release}
 Requires:	xorg-lib-libX11-devel
@@ -100,10 +100,10 @@ GIF.
 
 %package static
 Summary:	GIF-manipulation static library
-Summary(pl.UTF-8):   Biblioteki statyczne do obróbki plików GIF
-Summary(pt_BR.UTF-8):   Bibliotecas estáticas para desenvolvimento com libungif
-Summary(ru.UTF-8):   Статические библиотеки GIF-библиотеки
-Summary(uk.UTF-8):   Статичні бібліотеки GIF-бібліотеки
+Summary(pl.UTF-8):	Biblioteki statyczne do obróbki plików GIF
+Summary(pt_BR.UTF-8):	Bibliotecas estáticas para desenvolvimento com libungif
+Summary(ru.UTF-8):	Статические библиотеки GIF-библиотеки
+Summary(uk.UTF-8):	Статичні бібліотеки GIF-бібліотеки
 Group:		Development/Libraries
 Requires:	%{name}-devel = %{version}-%{release}
 Provides:	libungif-static
@@ -129,9 +129,9 @@ Bibliotecas estáticas para desenvolvimento com libgif.
 
 %package progs
 Summary:	Programs for converting and transforming GIF images
-Summary(pl.UTF-8):   Programy do konwertowania plików w formacie GIF
-Summary(ru.UTF-8):   Программы для конвертирования и обработки GIF-файлов
-Summary(uk.UTF-8):   Програми для конвертування та обробки GIF-файлів
+Summary(pl.UTF-8):	Programy do konwertowania plików w formacie GIF
+Summary(ru.UTF-8):	Программы для конвертирования и обработки GIF-файлов
+Summary(uk.UTF-8):	Програми для конвертування та обробки GIF-файлів
 Group:		Applications/Graphics
 Requires:	%{name} = %{version}-%{release}
 Provides:	libungif-progs
