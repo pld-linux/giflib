@@ -10,7 +10,7 @@ Summary(ru.UTF-8):	Библиотека для работы с GIF-файлам�
 Summary(uk.UTF-8):	Бібліотека для роботи з GIF-файлами
 Name:		giflib
 Version:	4.1.4
-Release:	4
+Release:	5	
 License:	X Consortium-like
 Group:		Libraries
 Source0:	http://dl.sourceforge.net/libungif/%{name}-%{version}.tar.bz2
@@ -174,7 +174,7 @@ rm -rf $RPM_BUILD_ROOT
 	DESTDIR=$RPM_BUILD_ROOT
 
 cd $RPM_BUILD_ROOT%{_libdir}
-ln -sf libgif.so.*.*.* $RPM_BUILD_ROOT%{_libdir}/libungif.so.4
+ln -sf libgif.so.*.*.* $RPM_BUILD_ROOT%{_libdir}/libungif.so.%{version}
 ln -sf libgif.so.*.*.* $RPM_BUILD_ROOT%{_libdir}/libungif.so
 ln -sf libgif.a $RPM_BUILD_ROOT%{_libdir}/libungif.a
 ln -sf libgif.la $RPM_BUILD_ROOT%{_libdir}/libungif.la
@@ -191,8 +191,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(644,root,root,755)
 %doc AUTHORS BUGS COPYING ChangeLog NEWS PATENT_PROBLEMS README TODO
-%attr(755,root,root) %{_libdir}/libgif.so.*.*.*
-%attr(755,root,root) %{_libdir}/libungif.so.4
+%attr(755,root,root) %{_libdir}/lib*.so.*.*.*
 
 %files devel
 %defattr(644,root,root,755)
