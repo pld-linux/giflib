@@ -25,6 +25,7 @@ BuildRequires:	automake
 BuildRequires:	libtool
 BuildRequires:	netpbm-devel
 BuildRequires:	rpmbuild(macros) >= 1.213
+BuildRequires:	sed
 BuildRequires:	urt-devel
 %{?with_x:BuildRequires:	xorg-lib-libX11-devel}
 %ifarch %{x8664} ia64 ppc64 s390x sparc64
@@ -174,8 +175,8 @@ rm -rf $RPM_BUILD_ROOT
 	DESTDIR=$RPM_BUILD_ROOT
 
 cd $RPM_BUILD_ROOT%{_libdir}
-ln -sf libgif.so.*.*.* $RPM_BUILD_ROOT%{_libdir}/libungif.so.%{version}
-ln -sf libgif.so.*.*.* $RPM_BUILD_ROOT%{_libdir}/libungif.so.4
+/sbin/ldconfig -n .
+mv -f libgif.so.[^.] $(ls libgif.so.[^.] | sed s/libgif/libungif/)
 ln -sf libgif.so.*.*.* $RPM_BUILD_ROOT%{_libdir}/libungif.so
 ln -sf libgif.a $RPM_BUILD_ROOT%{_libdir}/libungif.a
 ln -sf libgif.la $RPM_BUILD_ROOT%{_libdir}/libungif.la
@@ -193,7 +194,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(644,root,root,755)
 %doc AUTHORS BUGS COPYING ChangeLog NEWS PATENT_PROBLEMS README TODO
 %attr(755,root,root) %{_libdir}/lib*.so.*.*.*
-%attr(755,root,root) %{_libdir}/libungif.so.?
+%attr(755,root,root) %{_libdir}/libungif.so.[^.]
 
 %files devel
 %defattr(644,root,root,755)
