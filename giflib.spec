@@ -9,18 +9,17 @@ Summary(pt_BR.UTF-8):	Biblioteca de manipulação de arquivos GIF
 Summary(ru.UTF-8):	Библиотека для работы с GIF-файлами
 Summary(uk.UTF-8):	Бібліотека для роботи з GIF-файлами
 Name:		giflib
-Version:	4.1.4
-Release:	7
+Version:	4.1.6
+Release:	1
 License:	X Consortium-like
 Group:		Libraries
-Source0:	http://dl.sourceforge.net/libungif/%{name}-%{version}.tar.bz2
-# Source0-md5:	827d338961482a986f39c7f114531636
+Source0:	http://dl.sourceforge.net/giflib/%{name}-%{version}.tar.bz2
+# Source0-md5:	7125644155ae6ad33dbc9fc15a14735f
 Source1:	http://www.mif.pg.gda.pl/homepages/ankry/man-PLD/libungif-man-pages.tar.bz2
 # Source1-md5:	580c50403ed8f7e678ed04b3e0d712f3
 Patch0:		%{name}-link.patch
-Patch1:		http://users.own-hero.net/~decoder/fuzzyocr/giftext-segfault.patch
-Patch2:		%{name}-no_x11.patch
-URL:		http://sourceforge.net/projects/libungif/
+Patch1:		%{name}-segfault.patch
+URL:		http://sourceforge.net/projects/giflib/
 BuildRequires:	autoconf >= 2.59-9
 BuildRequires:	automake
 BuildRequires:	libtool
@@ -156,10 +155,7 @@ GIF.
 %prep
 %setup -q
 %patch0 -p1
-cd util
-%patch1 -p0
-cd ..
-%patch2 -p1
+%patch1 -p1
 
 %build
 %{__libtoolize}
@@ -168,7 +164,7 @@ cd ..
 %{__autoconf}
 %{__automake}
 %configure \
-	%{!?with_x:--without-x}
+	%{!?with_x:--disable-x11}
 %{__make}
 
 %install
@@ -195,7 +191,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(644,root,root,755)
-%doc AUTHORS BUGS COPYING ChangeLog NEWS PATENT_PROBLEMS README TODO
+%doc AUTHORS BUGS COPYING ChangeLog NEWS README TODO
 %attr(755,root,root) %{_libdir}/lib*.so.*.*.*
 %attr(755,root,root) %{_libdir}/libungif.so.[!.]
 
