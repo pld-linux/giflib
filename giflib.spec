@@ -10,7 +10,7 @@ Summary(ru.UTF-8):	Библиотека для работы с GIF-файлам�
 Summary(uk.UTF-8):	Бібліотека для роботи з GIF-файлами
 Name:		giflib
 Version:	4.1.6
-Release:	2
+Release:	3
 License:	X Consortium-like
 Group:		Libraries
 Source0:	http://dl.sourceforge.net/giflib/%{name}-%{version}.tar.bz2
