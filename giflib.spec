@@ -10,10 +10,10 @@ Summary(ru.UTF-8):	Библиотека для работы с GIF-файлам�
 Summary(uk.UTF-8):	Бібліотека для роботи з GIF-файлами
 Name:		giflib
 Version:	4.1.6
-Release:	4
+Release:	5
 License:	X Consortium-like
 Group:		Libraries
-Source0:	http://dl.sourceforge.net/giflib/%{name}-%{version}.tar.bz2
+Source0:	http://downloads.sourceforge.net/giflib/%{name}-%{version}.tar.bz2
 # Source0-md5:	7125644155ae6ad33dbc9fc15a14735f
 Source1:	http://www.mif.pg.gda.pl/homepages/ankry/man-PLD/libungif-man-pages.tar.bz2
 # Source1-md5:	580c50403ed8f7e678ed04b3e0d712f3
@@ -177,8 +177,8 @@ rm -rf $RPM_BUILD_ROOT
 
 cd $RPM_BUILD_ROOT%{_libdir}
 /sbin/ldconfig -n .
-mv -f libgif.so.[!.] $(ls libgif.so.[!.] | sed s/libgif/libungif/)
 ln -sf libgif.so.*.*.* $RPM_BUILD_ROOT%{_libdir}/libungif.so
+ln -sf libgif.so.*.*.* $RPM_BUILD_ROOT%{_libdir}/libungif.so.4
 ln -sf libgif.a $RPM_BUILD_ROOT%{_libdir}/libungif.a
 ln -sf libgif.la $RPM_BUILD_ROOT%{_libdir}/libungif.la
 
@@ -195,6 +195,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(644,root,root,755)
 %doc AUTHORS BUGS COPYING ChangeLog NEWS README TODO
 %attr(755,root,root) %{_libdir}/lib*.so.*.*.*
+%attr(755,root,root) %ghost %{_libdir}/libgif.so.4
 %attr(755,root,root) %{_libdir}/libungif.so.[!.]
 
 %files devel
