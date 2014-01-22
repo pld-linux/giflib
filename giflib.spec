@@ -11,7 +11,7 @@ Summary(uk.UTF-8):	Бібліотека для роботи з GIF-файлам�
 Name:		giflib
 Version:	4.1.6
 Release:	5
-License:	X Consortium-like
+License:	MIT-like
 Group:		Libraries
 Source0:	http://downloads.sourceforge.net/giflib/%{name}-%{version}.tar.bz2
 # Source0-md5:	7125644155ae6ad33dbc9fc15a14735f
@@ -184,6 +184,7 @@ ln -sf libgif.la $RPM_BUILD_ROOT%{_libdir}/libungif.la
 
 install -d $RPM_BUILD_ROOT%{_mandir}
 bzip2 -dc %{SOURCE1} | tar xf - -C $RPM_BUILD_ROOT%{_mandir}
+%{__rm} $RPM_BUILD_ROOT%{_mandir}/{README.libungif-man-pages,patch}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -194,9 +195,9 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(644,root,root,755)
 %doc AUTHORS BUGS COPYING ChangeLog NEWS README TODO
-%attr(755,root,root) %{_libdir}/lib*.so.*.*.*
+%attr(755,root,root) %{_libdir}/libgif.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libgif.so.4
-%attr(755,root,root) %{_libdir}/libungif.so.[!.]
+%attr(755,root,root) %{_libdir}/libungif.so.4
 
 %files devel
 %defattr(644,root,root,755)
@@ -205,7 +206,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_libdir}/libungif.so
 %{_libdir}/libgif.la
 %{_libdir}/libungif.la
-%{_includedir}/*.h
+%{_includedir}/gif_lib.h
 
 %files static
 %defattr(644,root,root,755)
@@ -215,5 +216,15 @@ rm -rf $RPM_BUILD_ROOT
 %files progs
 %defattr(644,root,root,755)
 %doc doc/gif2* doc/gif[a-z]* doc/*2gif*
-%attr(755,root,root) %{_bindir}/*
-%{_mandir}/man1/*
+%attr(755,root,root) %{_bindir}/gif*
+%attr(755,root,root) %{_bindir}/icon2gif
+%attr(755,root,root) %{_bindir}/raw2gif
+%attr(755,root,root) %{_bindir}/rgb2gif
+%attr(755,root,root) %{_bindir}/rle2gif
+%attr(755,root,root) %{_bindir}/text2gif
+%{_mandir}/man1/gif*.1*
+%{_mandir}/man1/icon2gif.1*
+%{_mandir}/man1/raw2gif.1*
+%{_mandir}/man1/rgb2gif.1*
+%{_mandir}/man1/rle2gif.1*
+%{_mandir}/man1/text2gif.1*
