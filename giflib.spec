@@ -9,17 +9,13 @@ Summary(pt_BR.UTF-8):	Biblioteca de manipulação de arquivos GIF
 Summary(ru.UTF-8):	Библиотека для работы с GIF-файлами
 Summary(uk.UTF-8):	Бібліотека для роботи з GIF-файлами
 Name:		giflib
-Version:	4.1.6
-Release:	5
+Version:	4.2.3
+Release:	1
 License:	MIT-like
 Group:		Libraries
 Source0:	http://downloads.sourceforge.net/giflib/%{name}-%{version}.tar.bz2
-# Source0-md5:	7125644155ae6ad33dbc9fc15a14735f
-Source1:	http://www.mif.pg.gda.pl/homepages/ankry/man-PLD/libungif-man-pages.tar.bz2
-# Source1-md5:	580c50403ed8f7e678ed04b3e0d712f3
+# Source0-md5:	be1f5749c24644257a88c9f42429343d
 Patch0:		%{name}-link.patch
-Patch1:		%{name}-segfault.patch
-Patch2:		format-security.patch
 URL:		http://sourceforge.net/projects/giflib/
 BuildRequires:	autoconf >= 2.59-9
 BuildRequires:	automake
@@ -27,7 +23,7 @@ BuildRequires:	libtool
 BuildRequires:	netpbm-devel
 BuildRequires:	rpmbuild(macros) >= 1.213
 BuildRequires:	sed
-BuildRequires:	urt-devel
+BuildRequires:	xmlto
 %{?with_x:BuildRequires:	xorg-lib-libX11-devel}
 %ifarch %{x8664} ia64 ppc64 s390x sparc64
 Provides:	libungif.so.4()(64bit)
@@ -70,7 +66,7 @@ Summary(ru.UTF-8):	Хедеры, библиотеки и документаци�
 Summary(uk.UTF-8):	Хедери, бібліотеки та документація GIF-бібліотеки
 Group:		Development/Libraries
 Requires:	%{name} = %{version}-%{release}
-Requires:	xorg-lib-libX11-devel
+%{?with_x:Requires:	xorg-lib-libX11-devel}
 Provides:	libungif-devel
 Obsoletes:	libungif-devel
 Obsoletes:	libungif4-devel
@@ -156,8 +152,6 @@ GIF.
 %prep
 %setup -q
 %patch0 -p1
-%patch1 -p1
-%patch2 -p1
 
 %build
 %{__libtoolize}
@@ -175,16 +169,15 @@ rm -rf $RPM_BUILD_ROOT
 %{__make} install \
 	DESTDIR=$RPM_BUILD_ROOT
 
+install -d $RPM_BUILD_ROOT%{_mandir}/man1
+cp -p doc/*.1 $RPM_BUILD_ROOT%{_mandir}/man1
+
 cd $RPM_BUILD_ROOT%{_libdir}
 /sbin/ldconfig -n .
 ln -sf libgif.so.*.*.* $RPM_BUILD_ROOT%{_libdir}/libungif.so
 ln -sf libgif.so.*.*.* $RPM_BUILD_ROOT%{_libdir}/libungif.so.4
 ln -sf libgif.a $RPM_BUILD_ROOT%{_libdir}/libungif.a
 ln -sf libgif.la $RPM_BUILD_ROOT%{_libdir}/libungif.la
-
-install -d $RPM_BUILD_ROOT%{_mandir}
-bzip2 -dc %{SOURCE1} | tar xf - -C $RPM_BUILD_ROOT%{_mandir}
-%{__rm} $RPM_BUILD_ROOT%{_mandir}/{README.libungif-man-pages,patch}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -201,7 +194,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files devel
 %defattr(644,root,root,755)
-%doc doc/*.{txt,png} doc/{gif_lib,index,liberror}.html
+%doc doc/*.txt doc/{gif_lib,intro,liberror}.html
 %attr(755,root,root) %{_libdir}/libgif.so
 %attr(755,root,root) %{_libdir}/libungif.so
 %{_libdir}/libgif.la
@@ -215,16 +208,13 @@ rm -rf $RPM_BUILD_ROOT
 
 %files progs
 %defattr(644,root,root,755)
-%doc doc/gif2* doc/gif[a-z]* doc/*2gif*
 %attr(755,root,root) %{_bindir}/gif*
 %attr(755,root,root) %{_bindir}/icon2gif
 %attr(755,root,root) %{_bindir}/raw2gif
 %attr(755,root,root) %{_bindir}/rgb2gif
-%attr(755,root,root) %{_bindir}/rle2gif
 %attr(755,root,root) %{_bindir}/text2gif
 %{_mandir}/man1/gif*.1*
 %{_mandir}/man1/icon2gif.1*
 %{_mandir}/man1/raw2gif.1*
 %{_mandir}/man1/rgb2gif.1*
-%{_mandir}/man1/rle2gif.1*
 %{_mandir}/man1/text2gif.1*
