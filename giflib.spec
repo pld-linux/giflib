@@ -1,7 +1,3 @@
-#
-# Conditional build:
-%bcond_without	x	# without X11
-#
 Summary:	GIF-manipulation library
 Summary(es.UTF-8):	Biblioteca de manipulación de archivos GIF
 Summary(pl.UTF-8):	Biblioteka do obróbki plików GIF
@@ -9,13 +5,12 @@ Summary(pt_BR.UTF-8):	Biblioteca de manipulação de arquivos GIF
 Summary(ru.UTF-8):	Библиотека для работы с GIF-файлами
 Summary(uk.UTF-8):	Бібліотека для роботи з GIF-файлами
 Name:		giflib
-Version:	4.2.3
+Version:	5.0.5
 Release:	1
 License:	MIT-like
 Group:		Libraries
 Source0:	http://downloads.sourceforge.net/giflib/%{name}-%{version}.tar.bz2
-# Source0-md5:	be1f5749c24644257a88c9f42429343d
-Patch0:		%{name}-link.patch
+# Source0-md5:	c3262ba0a3dad31ba876fb5ba1d71a02
 URL:		http://sourceforge.net/projects/giflib/
 BuildRequires:	autoconf >= 2.59-9
 BuildRequires:	automake
@@ -24,15 +19,6 @@ BuildRequires:	netpbm-devel
 BuildRequires:	rpmbuild(macros) >= 1.213
 BuildRequires:	sed
 BuildRequires:	xmlto
-%{?with_x:BuildRequires:	xorg-lib-libX11-devel}
-%ifarch %{x8664} ia64 ppc64 s390x sparc64
-Provides:	libungif.so.4()(64bit)
-%else
-Provides:	libungif.so.4
-%endif
-Provides:	libungif
-Obsoletes:	libungif
-Obsoletes:	libungif4
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %description
@@ -66,10 +52,9 @@ Summary(ru.UTF-8):	Хедеры, библиотеки и документаци�
 Summary(uk.UTF-8):	Хедери, бібліотеки та документація GIF-бібліотеки
 Group:		Development/Libraries
 Requires:	%{name} = %{version}-%{release}
-%{?with_x:Requires:	xorg-lib-libX11-devel}
 Provides:	libungif-devel
+Obsoletes:	giflib4-devel
 Obsoletes:	libungif-devel
-Obsoletes:	libungif4-devel
 
 %description devel
 Libraries and headers needed for developing programs that use libgif
@@ -105,6 +90,7 @@ Summary(uk.UTF-8):	Статичні бібліотеки GIF-бібліотек�
 Group:		Development/Libraries
 Requires:	%{name}-devel = %{version}-%{release}
 Provides:	libungif-static
+Obsoletes:	giflib4-static
 Obsoletes:	libungif-static
 
 %description static
@@ -133,6 +119,7 @@ Summary(uk.UTF-8):	Програми для конвертування та об�
 Group:		Applications/Graphics
 Requires:	%{name} = %{version}-%{release}
 Provides:	libungif-progs
+Obsoletes:	giflib4-progs
 Obsoletes:	libungif-progs
 
 %description progs
@@ -151,7 +138,6 @@ GIF.
 
 %prep
 %setup -q
-%patch0 -p1
 
 %build
 %{__libtoolize}
@@ -160,7 +146,8 @@ GIF.
 %{__autoconf}
 %{__automake}
 %configure \
-	%{!?with_x:--disable-x11}
+	--disable-silent-rules
+
 %{__make}
 
 %install
@@ -171,13 +158,12 @@ rm -rf $RPM_BUILD_ROOT
 
 install -d $RPM_BUILD_ROOT%{_mandir}/man1
 cp -p doc/*.1 $RPM_BUILD_ROOT%{_mandir}/man1
+# these are unpackged examples
+%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/{gifbg,gifcolor,gifhisto,gifwedge}.1
 
 cd $RPM_BUILD_ROOT%{_libdir}
-/sbin/ldconfig -n .
 ln -sf libgif.so.*.*.* $RPM_BUILD_ROOT%{_libdir}/libungif.so
-ln -sf libgif.so.*.*.* $RPM_BUILD_ROOT%{_libdir}/libungif.so.4
 ln -sf libgif.a $RPM_BUILD_ROOT%{_libdir}/libungif.a
-ln -sf libgif.la $RPM_BUILD_ROOT%{_libdir}/libungif.la
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -189,16 +175,14 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(644,root,root,755)
 %doc AUTHORS BUGS COPYING ChangeLog NEWS README TODO
 %attr(755,root,root) %{_libdir}/libgif.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libgif.so.4
-%attr(755,root,root) %{_libdir}/libungif.so.4
+%attr(755,root,root) %ghost %{_libdir}/libgif.so.6
 
 %files devel
 %defattr(644,root,root,755)
-%doc doc/*.txt doc/{gif_lib,intro,liberror}.html
+%doc doc/*.txt doc/{gif_lib,intro}.html doc/whatsinagif
 %attr(755,root,root) %{_libdir}/libgif.so
 %attr(755,root,root) %{_libdir}/libungif.so
 %{_libdir}/libgif.la
-%{_libdir}/libungif.la
 %{_includedir}/gif_lib.h
 
 %files static
@@ -208,13 +192,22 @@ rm -rf $RPM_BUILD_ROOT
 
 %files progs
 %defattr(644,root,root,755)
-%attr(755,root,root) %{_bindir}/gif*
-%attr(755,root,root) %{_bindir}/icon2gif
-%attr(755,root,root) %{_bindir}/raw2gif
-%attr(755,root,root) %{_bindir}/rgb2gif
-%attr(755,root,root) %{_bindir}/text2gif
-%{_mandir}/man1/gif*.1*
-%{_mandir}/man1/icon2gif.1*
-%{_mandir}/man1/raw2gif.1*
-%{_mandir}/man1/rgb2gif.1*
-%{_mandir}/man1/text2gif.1*
+%attr(755,root,root) %{_bindir}/gif2raw
+%attr(755,root,root) %{_bindir}/gif2rgb
+%attr(755,root,root) %{_bindir}/gifbuild
+%attr(755,root,root) %{_bindir}/gifclrmp
+%attr(755,root,root) %{_bindir}/gifecho
+%attr(755,root,root) %{_bindir}/giffix
+%attr(755,root,root) %{_bindir}/gifinto
+%attr(755,root,root) %{_bindir}/giftext
+%attr(755,root,root) %{_bindir}/giftool
+%{_mandir}/man1/gif2raw.1*
+%{_mandir}/man1/gif2rgb.1*
+%{_mandir}/man1/gifbuild.1*
+%{_mandir}/man1/gifclrmp.1*
+%{_mandir}/man1/gifecho.1*
+%{_mandir}/man1/giffix.1*
+%{_mandir}/man1/gifinto.1*
+%{_mandir}/man1/giflib.1*
+%{_mandir}/man1/giftext.1*
+%{_mandir}/man1/giftool.1*
