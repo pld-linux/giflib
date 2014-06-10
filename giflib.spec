@@ -5,12 +5,12 @@ Summary(pt_BR.UTF-8):	Biblioteca de manipulação de arquivos GIF
 Summary(ru.UTF-8):	Библиотека для работы с GIF-файлами
 Summary(uk.UTF-8):	Бібліотека для роботи з GIF-файлами
 Name:		giflib
-Version:	5.0.5
+Version:	5.1.0
 Release:	1
 License:	MIT-like
 Group:		Libraries
 Source0:	http://downloads.sourceforge.net/giflib/%{name}-%{version}.tar.bz2
-# Source0-md5:	c3262ba0a3dad31ba876fb5ba1d71a02
+# Source0-md5:	c7e9f1c10b755ab955156d4c1ac7fc5d
 URL:		http://sourceforge.net/projects/giflib/
 BuildRequires:	autoconf >= 2.59-9
 BuildRequires:	automake
@@ -175,7 +175,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(644,root,root,755)
 %doc AUTHORS BUGS COPYING ChangeLog NEWS README TODO
 %attr(755,root,root) %{_libdir}/libgif.so.*.*.*
-%attr(755,root,root) %ghost %{_libdir}/libgif.so.6
+%attr(755,root,root) %ghost %{_libdir}/libgif.so.7
 
 %files devel
 %defattr(644,root,root,755)
@@ -192,7 +192,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %files progs
 %defattr(644,root,root,755)
-%attr(755,root,root) %{_bindir}/gif2raw
 %attr(755,root,root) %{_bindir}/gif2rgb
 %attr(755,root,root) %{_bindir}/gifbuild
 %attr(755,root,root) %{_bindir}/gifclrmp
@@ -201,7 +200,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_bindir}/gifinto
 %attr(755,root,root) %{_bindir}/giftext
 %attr(755,root,root) %{_bindir}/giftool
-%{_mandir}/man1/gif2raw.1*
 %{_mandir}/man1/gif2rgb.1*
 %{_mandir}/man1/gifbuild.1*
 %{_mandir}/man1/gifclrmp.1*
