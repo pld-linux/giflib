@@ -6,11 +6,12 @@ Summary(ru.UTF-8):	Библиотека для работы с GIF-файлам�
 Summary(uk.UTF-8):	Бібліотека для роботи з GIF-файлами
 Name:		giflib
 Version:	5.1.2
-Release:	1
+Release:	2
 License:	MIT-like
 Group:		Libraries
 Source0:	http://downloads.sourceforge.net/giflib/%{name}-%{version}.tar.bz2
 # Source0-md5:	323a9f11ab56c8a2d1715376410ce376
+Patch0:		%{name}-git.patch
 URL:		http://sourceforge.net/projects/giflib/
 BuildRequires:	autoconf >= 2.59-9
 BuildRequires:	automake
@@ -138,6 +139,7 @@ GIF.
 
 %prep
 %setup -q
+%patch0 -p1
 
 %build
 %{__libtoolize}
