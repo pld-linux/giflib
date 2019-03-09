@@ -1,3 +1,7 @@
+#
+# Conditional build:
+%bcond_without	tests	# regression tests
+
 Summary:	GIF-manipulation library
 Summary(es.UTF-8):	Biblioteca de manipulación de archivos GIF
 Summary(pl.UTF-8):	Biblioteka do obróbki plików GIF
@@ -5,16 +9,15 @@ Summary(pt_BR.UTF-8):	Biblioteca de manipulação de arquivos GIF
 Summary(ru.UTF-8):	Библиотека для работы с GIF-файлами
 Summary(uk.UTF-8):	Бібліотека для роботи з GIF-файлами
 Name:		giflib
-Version:	5.1.4
+Version:	5.1.6
 Release:	1
 License:	MIT-like
 Group:		Libraries
-Source0:	http://downloads.sourceforge.net/giflib/%{name}-%{version}.tar.bz2
-# Source0-md5:	2c171ced93c0e83bb09e6ccad8e3ba2b
+Source0:	http://downloads.sourceforge.net/giflib/%{name}-%{version}.tar.gz
+# Source0-md5:	4ad967c8b1380d830f33dc28fd38d889
+Patch0:		%{name}-make.patch
 URL:		http://sourceforge.net/projects/giflib/
-BuildRequires:	autoconf >= 2.59-9
-BuildRequires:	automake
-BuildRequires:	libtool
+BuildRequires:	gcc >= 5:3.2
 BuildRequires:	netpbm-devel
 BuildRequires:	rpmbuild(macros) >= 1.213
 BuildRequires:	sed
@@ -138,27 +141,31 @@ GIF.
 
 %prep
 %setup -q
+%patch0 -p1
 
 %build
-%{__libtoolize}
-%{__aclocal}
-%{__autoheader}
-%{__autoconf}
-%{__automake}
-%configure \
-	--disable-silent-rules
+%{__make} \
+	CC="%{__cc}" \
+	OFLAGS="%{rpmcflags}" \
+	LDFLAGS="%{rpmldflags}"
 
-%{__make}
+%if %{with tests}
+ln -sf libgif.so libgif.so.7
+LD_LIBRARY_PATH=$(pwd) \
+%{__make} -j1 check
+%endif
 
 %install
 rm -rf $RPM_BUILD_ROOT
 
 %{__make} install \
-	DESTDIR=$RPM_BUILD_ROOT
+	DESTDIR=$RPM_BUILD_ROOT \
+	PREFIX=%{_prefix} \
+	LIBDIR=%{_libdir}
 
-install -d $RPM_BUILD_ROOT%{_mandir}/man1
-cp -p doc/*.1 $RPM_BUILD_ROOT%{_mandir}/man1
-# these are unpackged examples
+# skeleton programs
+%{__rm} $RPM_BUILD_ROOT%{_bindir}/{giffilter,gifsponge}
+# docs for not installed programs used in tests
 %{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/{gifbg,gifcolor,gifhisto,gifwedge}.1
 
 cd $RPM_BUILD_ROOT%{_libdir}
@@ -173,7 +180,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(644,root,root,755)
-%doc AUTHORS BUGS COPYING ChangeLog NEWS README TODO
+%doc COPYING ChangeLog NEWS README TODO history.adoc
 %attr(755,root,root) %{_libdir}/libgif.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libgif.so.7
 
@@ -182,7 +189,6 @@ rm -rf $RPM_BUILD_ROOT
 %doc doc/*.txt doc/{gif_lib,intro}.html doc/whatsinagif
 %attr(755,root,root) %{_libdir}/libgif.so
 %attr(755,root,root) %{_libdir}/libungif.so
-%{_libdir}/libgif.la
 %{_includedir}/gif_lib.h
 
 %files static
