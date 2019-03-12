@@ -9,12 +9,12 @@ Summary(pt_BR.UTF-8):	Biblioteca de manipulação de arquivos GIF
 Summary(ru.UTF-8):	Библиотека для работы с GIF-файлами
 Summary(uk.UTF-8):	Бібліотека для роботи з GIF-файлами
 Name:		giflib
-Version:	5.1.6
+Version:	5.1.7
 Release:	1
 License:	MIT-like
 Group:		Libraries
 Source0:	http://downloads.sourceforge.net/giflib/%{name}-%{version}.tar.gz
-# Source0-md5:	4ad967c8b1380d830f33dc28fd38d889
+# Source0-md5:	5739b3a75fff3fe7b9419f15bc040703
 Patch0:		%{name}-make.patch
 URL:		http://sourceforge.net/projects/giflib/
 BuildRequires:	gcc >= 5:3.2
