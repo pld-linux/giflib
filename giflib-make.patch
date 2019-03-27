@@ -1,14 +1,5 @@
---- giflib-5.1.6/Makefile.orig	2019-02-12 15:26:13.000000000 +0100
-+++ giflib-5.1.6/Makefile	2019-03-08 20:51:20.376011393 +0100
-@@ -20,7 +20,7 @@
- BINDIR = $(PREFIX)/bin
- INCDIR = $(PREFIX)/include
- LIBDIR = $(PREFIX)/lib
--MANDIR = $(PREFIX)/share/man
-+MANDIR = $(PREFIX)/share/man/man1
- 
- # No user-serviceable parts below this line
- 
+--- giflib-5.1.8/Makefile.orig	2019-03-17 17:33:02.000000000 +0100
++++ giflib-5.1.8/Makefile	2019-03-27 18:05:08.720055399 +0100
 @@ -58,15 +58,15 @@
  	gifsponge \
  	gifwedge
@@ -23,8 +14,8 @@
 +$(UTILS):: libgif.so
  
  libgif.so: $(OBJECTS) $(HEADERS)
--	$(CC) $(CFLAGS) -shared $(OFLAGS) -o libgif.so $(OBJECTS)
-+	$(CC) $(LDFLAGS) $(CFLAGS) -shared -Wl,-soname,libgif.so.$(LIBMAJOR) $(OFLAGS) -o libgif.so $(OBJECTS)
+-	$(CC) $(CFLAGS) -shared $(OFLAGS) -Wl,-soname -Wl,libgif.so.$(LIBMAJOR) -o libgif.so $(OBJECTS)
++	$(CC) $(LDFLAGS) $(CFLAGS) -shared $(OFLAGS) -Wl,-soname -Wl,libgif.so.$(LIBMAJOR) -o libgif.so $(OBJECTS)
  
  libgif.a: $(OBJECTS) $(HEADERS)
- 	ar rcs libgif.a $(OBJECTS)
+ 	$(AR) rcs libgif.a $(OBJECTS)
