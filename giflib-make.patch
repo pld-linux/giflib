@@ -1,21 +1,17 @@
---- giflib-5.1.8/Makefile.orig	2019-03-17 17:33:02.000000000 +0100
-+++ giflib-5.1.8/Makefile	2019-03-27 18:05:08.720055399 +0100
-@@ -58,15 +58,15 @@
+--- giflib-5.1.9/Makefile.orig	2019-04-26 17:33:39.313133728 +0200
++++ giflib-5.1.9/Makefile	2019-04-26 17:35:09.355979257 +0200
+@@ -60,12 +60,12 @@
  	gifsponge \
  	gifwedge
  
 -LDLIBS=libgif.a -lm
 +LDLIBS=-L. -lgif -lm
  
- all: libgif.so libgif.a $(UTILS)
+ all: libgif.so libgif.a libutil.so libutil.a $(UTILS)
  	$(MAKE) -C doc
  
--$(UTILS):: libgif.a
-+$(UTILS):: libgif.so
+-$(UTILS):: libgif.a libutil.a
++$(UTILS):: libgif.so libutil.a
  
  libgif.so: $(OBJECTS) $(HEADERS)
--	$(CC) $(CFLAGS) -shared $(OFLAGS) -Wl,-soname -Wl,libgif.so.$(LIBMAJOR) -o libgif.so $(OBJECTS)
-+	$(CC) $(LDFLAGS) $(CFLAGS) -shared $(OFLAGS) -Wl,-soname -Wl,libgif.so.$(LIBMAJOR) -o libgif.so $(OBJECTS)
- 
- libgif.a: $(OBJECTS) $(HEADERS)
- 	$(AR) rcs libgif.a $(OBJECTS)
+ 	$(CC) $(CFLAGS) -shared $(LDFLAGS) -Wl,-soname -Wl,libgif.so.$(LIBMAJOR) -o libgif.so $(OBJECTS)
