@@ -9,12 +9,12 @@ Summary(pt_BR.UTF-8):	Biblioteca de manipulação de arquivos GIF
 Summary(ru.UTF-8):	Библиотека для работы с GIF-файлами
 Summary(uk.UTF-8):	Бібліотека для роботи з GIF-файлами
 Name:		giflib
-Version:	5.1.9
+Version:	5.2.1
 Release:	1
 License:	MIT-like
 Group:		Libraries
-Source0:	http://downloads.sourceforge.net/giflib/%{name}-%{version}.tar.bz2
-# Source0-md5:	c1df79d223b10b92f44ca649ef5f1459
+Source0:	http://downloads.sourceforge.net/giflib/%{name}-%{version}.tar.gz
+# Source0-md5:	6f03aee4ebe54ac2cc1ab3e4b0a049e5
 Patch0:		%{name}-make.patch
 URL:		http://sourceforge.net/projects/giflib/
 BuildRequires:	gcc >= 5:3.2
@@ -163,10 +163,8 @@ rm -rf $RPM_BUILD_ROOT
 	PREFIX=%{_prefix} \
 	LIBDIR=%{_libdir}
 
-# skeleton programs
-%{__rm} $RPM_BUILD_ROOT%{_bindir}/{giffilter,gifsponge}
 # docs for not installed programs used in tests
-%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/{gifbg,gifcolor,gifhisto,gifwedge}.1
+%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/{gifbg,gifcolor,gifecho,gifhisto,gifinto,gifwedge}.1
 
 cd $RPM_BUILD_ROOT%{_libdir}
 ln -sf libgif.so.*.*.* $RPM_BUILD_ROOT%{_libdir}/libungif.so
@@ -201,17 +199,13 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_bindir}/gif2rgb
 %attr(755,root,root) %{_bindir}/gifbuild
 %attr(755,root,root) %{_bindir}/gifclrmp
-%attr(755,root,root) %{_bindir}/gifecho
 %attr(755,root,root) %{_bindir}/giffix
-%attr(755,root,root) %{_bindir}/gifinto
 %attr(755,root,root) %{_bindir}/giftext
 %attr(755,root,root) %{_bindir}/giftool
 %{_mandir}/man1/gif2rgb.1*
 %{_mandir}/man1/gifbuild.1*
 %{_mandir}/man1/gifclrmp.1*
-%{_mandir}/man1/gifecho.1*
 %{_mandir}/man1/giffix.1*
-%{_mandir}/man1/gifinto.1*
 %{_mandir}/man1/giflib.1*
 %{_mandir}/man1/giftext.1*
 %{_mandir}/man1/giftool.1*
