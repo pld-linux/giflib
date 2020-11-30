@@ -1,17 +1,65 @@
---- giflib-5.1.9/Makefile.orig	2019-04-26 17:33:39.313133728 +0200
-+++ giflib-5.1.9/Makefile	2019-04-26 17:35:09.355979257 +0200
-@@ -60,12 +60,12 @@
+--- giflib-5.2.1/Makefile.orig	2019-06-24 18:08:57.000000000 +0200
++++ giflib-5.2.1/Makefile	2020-11-30 19:44:50.354825609 +0100
+@@ -59,12 +59,12 @@
  	gifsponge \
  	gifwedge
  
 -LDLIBS=libgif.a -lm
 +LDLIBS=-L. -lgif -lm
  
- all: libgif.so libgif.a libutil.so libutil.a $(UTILS)
+-all: libgif.so libgif.a libutil.so libutil.a $(UTILS)
++all: libgif.so libgif.a libgifutil.so libgifutil.a $(UTILS)
  	$(MAKE) -C doc
  
 -$(UTILS):: libgif.a libutil.a
-+$(UTILS):: libgif.so libutil.a
++$(UTILS):: libgif.so libgifutil.so
  
  libgif.so: $(OBJECTS) $(HEADERS)
  	$(CC) $(CFLAGS) -shared $(LDFLAGS) -Wl,-soname -Wl,libgif.so.$(LIBMAJOR) -o libgif.so $(OBJECTS)
+@@ -72,14 +72,14 @@
+ libgif.a: $(OBJECTS) $(HEADERS)
+ 	$(AR) rcs libgif.a $(OBJECTS)
+ 
+-libutil.so: $(UOBJECTS) $(UHEADERS)
+-	$(CC) $(CFLAGS) -shared $(LDFLAGS) -Wl,-soname -Wl,libutil.so.$(LIBMAJOR) -o libutil.so $(UOBJECTS)
++libgifutil.so: $(UOBJECTS) $(UHEADERS) libgif.so
++	$(CC) $(CFLAGS) -shared $(LDFLAGS) -Wl,-soname -Wl,libgifutil.so.$(LIBMAJOR) -o libgifutil.so $(UOBJECTS) -L. -lgif
+ 
+-libutil.a: $(UOBJECTS) $(UHEADERS)
+-	$(AR) rcs libutil.a $(UOBJECTS)
++libgifutil.a: $(UOBJECTS) $(UHEADERS)
++	$(AR) rcs libgifutil.a $(UOBJECTS)
+ 
+ clean:
+-	rm -f $(UTILS) $(TARGET) libgetarg.a libgif.a libgif.so libutil.a libutil.so *.o
++	rm -f $(UTILS) $(TARGET) libgetarg.a libgif.a libgif.so libgifutil.a libgifutil.so *.o
+ 	rm -f libgif.so.$(LIBMAJOR).$(LIBMINOR).$(LIBPOINT)
+ 	rm -f libgif.so.$(LIBMAJOR)
+ 	rm -fr doc/*.1 *.html doc/staging
+@@ -96,12 +96,17 @@
+ install-include:
+ 	$(INSTALL) -d "$(DESTDIR)$(INCDIR)"
+ 	$(INSTALL) -m 644 gif_lib.h "$(DESTDIR)$(INCDIR)"
++	$(INSTALL) -m 644 getarg.h "$(DESTDIR)$(INCDIR)/gif_util.h"
+ install-lib:
+ 	$(INSTALL) -d "$(DESTDIR)$(LIBDIR)"
+ 	$(INSTALL) -m 644 libgif.a "$(DESTDIR)$(LIBDIR)/libgif.a"
+ 	$(INSTALL) -m 755 libgif.so "$(DESTDIR)$(LIBDIR)/libgif.so.$(LIBVER)"
+ 	ln -sf libgif.so.$(LIBVER) "$(DESTDIR)$(LIBDIR)/libgif.so.$(LIBMAJOR)"
+ 	ln -sf libgif.so.$(LIBMAJOR) "$(DESTDIR)$(LIBDIR)/libgif.so"
++	$(INSTALL) -m 644 libgifutil.a "$(DESTDIR)$(LIBDIR)/libgifutil.a"
++	$(INSTALL) -m 755 libgifutil.so "$(DESTDIR)$(LIBDIR)/libgifutil.so.$(LIBVER)"
++	ln -sf libgifutil.so.$(LIBVER) "$(DESTDIR)$(LIBDIR)/libgifutil.so.$(LIBMAJOR)"
++	ln -sf libgifutil.so.$(LIBMAJOR) "$(DESTDIR)$(LIBDIR)/libgifutil.so"
+ install-man:
+ 	$(INSTALL) -d "$(DESTDIR)$(MANDIR)/man1"
+ 	$(INSTALL) -m 644 doc/*.1 "$(DESTDIR)$(MANDIR)/man1"
+@@ -113,6 +118,8 @@
+ uninstall-lib:
+ 	cd "$(DESTDIR)$(LIBDIR)" && \
+ 		rm -f libgif.a libgif.so libgif.so.$(LIBMAJOR) libgif.so.$(LIBVER)
++	cd "$(DESTDIR)$(LIBDIR)" && \
++		rm -f libgifutil.a libgifutil.so libgifutil.so.$(LIBMAJOR) libgifutil.so.$(LIBVER)
+ uninstall-man:
+ 	cd "$(DESTDIR)$(MANDIR)/man1" && rm -f $(shell cd doc >/dev/null && echo *.1)
+ 

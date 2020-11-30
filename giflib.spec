@@ -10,7 +10,7 @@ Summary(ru.UTF-8):	Библиотека для работы с GIF-файлам�
 Summary(uk.UTF-8):	Бібліотека для роботи з GIF-файлами
 Name:		giflib
 Version:	5.2.1
-Release:	1
+Release:	2
 License:	MIT-like
 Group:		Libraries
 Source0:	http://downloads.sourceforge.net/giflib/%{name}-%{version}.tar.gz
@@ -151,6 +151,7 @@ GIF.
 
 %if %{with tests}
 ln -sf libgif.so libgif.so.7
+ln -sf libgifutil.so libgifutil.so.7
 LD_LIBRARY_PATH=$(pwd) \
 %{__make} -j1 check
 %endif
@@ -181,17 +182,22 @@ rm -rf $RPM_BUILD_ROOT
 %doc COPYING ChangeLog NEWS README TODO history.adoc
 %attr(755,root,root) %{_libdir}/libgif.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/libgif.so.7
+%attr(755,root,root) %{_libdir}/libgifutil.so.*.*.*
+%attr(755,root,root) %ghost %{_libdir}/libgifutil.so.7
 
 %files devel
 %defattr(644,root,root,755)
 %doc doc/{gif_lib,intro}.html doc/whatsinagif
 %attr(755,root,root) %{_libdir}/libgif.so
+%attr(755,root,root) %{_libdir}/libgifutil.so
 %attr(755,root,root) %{_libdir}/libungif.so
 %{_includedir}/gif_lib.h
+%{_includedir}/gif_util.h
 
 %files static
 %defattr(644,root,root,755)
 %{_libdir}/libgif.a
+%{_libdir}/libgifutil.a
 %{_libdir}/libungif.a
 
 %files progs
