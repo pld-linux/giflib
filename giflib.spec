@@ -9,14 +9,14 @@ Summary(pt_BR.UTF-8):	Biblioteca de manipulação de arquivos GIF
 Summary(ru.UTF-8):	Библиотека для работы с GIF-файлами
 Summary(uk.UTF-8):	Бібліотека для роботи з GIF-файлами
 Name:		giflib
-Version:	5.2.1
-Release:	2
+Version:	5.2.2
+Release:	1
 License:	MIT-like
 Group:		Libraries
-Source0:	http://downloads.sourceforge.net/giflib/%{name}-%{version}.tar.gz
-# Source0-md5:	6f03aee4ebe54ac2cc1ab3e4b0a049e5
+Source0:	https://downloads.sourceforge.net/giflib/%{name}-%{version}.tar.gz
+# Source0-md5:	913dd251492134e235ee3c9a91987a4d
 Patch0:		%{name}-make.patch
-URL:		http://sourceforge.net/projects/giflib/
+URL:		https://sourceforge.net/projects/giflib/
 BuildRequires:	gcc >= 5:3.2
 BuildRequires:	netpbm-devel
 BuildRequires:	rpmbuild(macros) >= 1.213
@@ -56,8 +56,8 @@ Summary(uk.UTF-8):	Хедери, бібліотеки та документац�
 Group:		Development/Libraries
 Requires:	%{name} = %{version}-%{release}
 Provides:	libungif-devel
-Obsoletes:	giflib4-devel
-Obsoletes:	libungif-devel
+Obsoletes:	giflib4-devel < 5
+Obsoletes:	libungif-devel < 5
 
 %description devel
 Libraries and headers needed for developing programs that use libgif
@@ -93,8 +93,8 @@ Summary(uk.UTF-8):	Статичні бібліотеки GIF-бібліотек�
 Group:		Development/Libraries
 Requires:	%{name}-devel = %{version}-%{release}
 Provides:	libungif-static
-Obsoletes:	giflib4-static
-Obsoletes:	libungif-static
+Obsoletes:	giflib4-static < 5
+Obsoletes:	libungif-static < 5
 
 %description static
 Static libraries needed for developing programs that use libgif to
@@ -122,8 +122,8 @@ Summary(uk.UTF-8):	Програми для конвертування та об�
 Group:		Applications/Graphics
 Requires:	%{name} = %{version}-%{release}
 Provides:	libungif-progs
-Obsoletes:	giflib4-progs
-Obsoletes:	libungif-progs
+Obsoletes:	giflib4-progs < 5
+Obsoletes:	libungif-progs < 5
 
 %description progs
 This package contains various programs for manipulating GIF image
@@ -164,8 +164,14 @@ rm -rf $RPM_BUILD_ROOT
 	PREFIX=%{_prefix} \
 	LIBDIR=%{_libdir}
 
+# wrong files installed in 5.2.2
+%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/*.xml
+cp -p doc/*.1 $RPM_BUILD_ROOT%{_mandir}/man1
+install -d $RPM_BUILD_ROOT%{_mandir}/man7
+cp -p doc/*.7 $RPM_BUILD_ROOT%{_mandir}/man7
+
 # docs for not installed programs used in tests
-%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/{gifbg,gifcolor,gifecho,gifhisto,gifinto,gifwedge}.1
+%{__rm} $RPM_BUILD_ROOT%{_mandir}/man1/{gifbg,gifcolor,gifecho,giffilter,gifhisto,gifinto,gifsponge,gifwedge}.1
 
 cd $RPM_BUILD_ROOT%{_libdir}
 ln -sf libgif.so.*.*.* $RPM_BUILD_ROOT%{_libdir}/libungif.so
@@ -212,6 +218,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man1/gifbuild.1*
 %{_mandir}/man1/gifclrmp.1*
 %{_mandir}/man1/giffix.1*
-%{_mandir}/man1/giflib.1*
 %{_mandir}/man1/giftext.1*
 %{_mandir}/man1/giftool.1*
+%{_mandir}/man7/giflib.7*
