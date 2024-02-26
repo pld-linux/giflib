@@ -17,6 +17,7 @@ Source0:	https://downloads.sourceforge.net/giflib/%{name}-%{version}.tar.gz
 # Source0-md5:	913dd251492134e235ee3c9a91987a4d
 Patch0:		%{name}-make.patch
 URL:		https://sourceforge.net/projects/giflib/
+BuildRequires:	ImageMagick
 BuildRequires:	gcc >= 5:3.2
 BuildRequires:	netpbm-devel
 BuildRequires:	rpmbuild(macros) >= 1.213
