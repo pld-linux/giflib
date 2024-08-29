@@ -1,0 +1,47 @@
+--- giflib-5.2.2/gif_lib.h.orig	2024-02-19 08:35:14.000000000 +0100
++++ giflib-5.2.2/gif_lib.h	2024-08-29 19:25:22.379409692 +0200
+@@ -9,10 +9,6 @@ SPDX-License-Identifier: MIT
+ #ifndef _GIF_LIB_H_
+ #define _GIF_LIB_H_ 1
+ 
+-#ifdef __cplusplus
+-extern "C" {
+-#endif /* __cplusplus */
+-
+ #define GIFLIB_MAJOR 5
+ #define GIFLIB_MINOR 2
+ #define GIFLIB_RELEASE 2
+@@ -29,6 +25,10 @@ extern "C" {
+ #define GIF87_STAMP "GIF87a" /* First chars in file - GIF stamp.  */
+ #define GIF89_STAMP "GIF89a" /* First chars in file - GIF stamp.  */
+ 
++#ifdef __cplusplus
++extern "C" {
++#endif /* __cplusplus */
++
+ typedef unsigned char GifPixelType;
+ typedef unsigned char *GifRowType;
+ typedef unsigned char GifByteType;
+--- giflib-5.2.2/getarg.h.orig	2024-02-19 03:20:00.000000000 +0100
++++ giflib-5.2.2/getarg.h	2024-08-29 19:29:19.581457992 +0200
+@@ -23,6 +23,10 @@ SPDX-License-Identifier: MIT
+ #define CMD_ERR_NumRead 4   /* Failed on reading number. */
+ #define CMD_ERR_AllSatis 5  /* Fail to satisfy (must-'!') option. */
+ 
++#ifdef __cplusplus
++extern "C" {
++#endif /* __cplusplus */
++
+ bool GAGetArgs(int argc, char **argv, char *CtrlStr, ...);
+ void GAPrintErrMsg(int Error);
+ void GAPrintHowTo(char *CtrlStr);
+@@ -49,6 +53,9 @@ int GifQuantizeBuffer(unsigned int Width
+ 		exit(-3);                                                      \
+ 	}
+ 
++#ifdef __cplusplus
++}
++#endif /* __cplusplus */
+ #endif /* _GETARG_H */
+ 
+ /* end */
