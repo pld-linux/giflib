@@ -1,15 +1,15 @@
---- giflib-5.2.2/Makefile.orig	2024-02-25 21:33:25.080972300 +0100
-+++ giflib-5.2.2/Makefile	2024-02-25 21:50:41.035360053 +0100
-@@ -61,7 +61,7 @@ UTILS = $(INSTALLABLE) \
- 	gifsponge \
- 	gifwedge
+--- giflib-6.1.3/Makefile.orig	2026-04-12 19:17:27.000000000 +0200
++++ giflib-6.1.3/Makefile	2026-05-17 16:14:28.886294920 +0200
+@@ -75,7 +75,7 @@ UTILS = $(INSTALLABLE) \
+ 	gifwedge \
+ 	gif2rgb
  
 -LDLIBS=libgif.a -lm
 +LDLIBS=-L. -lgif -lm
  
- MANUAL_PAGES = \
- 	doc/gif2rgb.xml \
-@@ -76,24 +76,24 @@ SOEXTENSION	= so
+ MANUAL_PAGES_1 = \
+ 	doc/gifbuild.xml \
+@@ -95,19 +95,19 @@ SOEXTENSION	= so
  LIBGIFSO	= libgif.$(SOEXTENSION)
  LIBGIFSOMAJOR	= libgif.$(SOEXTENSION).$(LIBMAJOR)
  LIBGIFSOVER	= libgif.$(SOEXTENSION).$(LIBVER)
@@ -28,29 +28,32 @@
 +LIBUTILSOMAJOR	= libgifutil.$(LIBMAJOR).$(SOEXTENSION)
  endif
  
--all: $(LIBGIFSO) libgif.a $(LIBUTILSO) libutil.a $(UTILS)
-+all: $(LIBGIFSO) libgif.a $(LIBUTILSO) libgifutil.a $(UTILS)
+ SHARED_LIBS = $(LIBGIFSO) $(LIBUTILSO)
+-STATIC_LIBS = libgif.a libutil.a
++STATIC_LIBS = libgif.a libgifutil.a
+ 
+ all: shared-lib static-lib $(UTILS)
  ifeq ($(UNAME), Darwin)
- else
+@@ -115,7 +115,7 @@ else
  	$(MAKE) -C doc
  endif
  
--$(UTILS):: libgif.a libutil.a
-+$(UTILS):: $(LIBGIFSO) $(LIBUTILSO)
+-$(UTILS):: $(STATIC_LIBS)
++$(UTILS):: $(SHARED_LIBS)
  
- $(LIBGIFSO): $(OBJECTS) $(HEADERS)
- ifeq ($(UNAME), Darwin)
-@@ -105,18 +105,18 @@ endif
+ shared-lib: $(SHARED_LIBS)
+ 
+@@ -131,15 +131,15 @@ endif
  libgif.a: $(OBJECTS) $(HEADERS)
  	$(AR) rcs libgif.a $(OBJECTS)
  
 -$(LIBUTILSO): $(UOBJECTS) $(UHEADERS)
-+$(LIBUTILSO): $(UOBJECTS) $(UHEADERS) libgif.so
++$(LIBUTILSO): $(UOBJECTS) $(UHEADERS) $(LIBGIFSO)
  ifeq ($(UNAME), Darwin)
- 	$(CC) $(CFLAGS) -dynamiclib -current_version $(LIBVER) $(OBJECTS) -o $(LIBUTILSO)
+ 	$(CC) $(CFLAGS) -dynamiclib -current_version $(LIBVER) $(UOBJECTS) -o $(LIBUTILSO)
  else
--	$(CC) $(CFLAGS) -shared $(LDFLAGS) -Wl,-soname -Wl,$(LIBUTILMAJOR) -o $(LIBUTILSO) $(UOBJECTS)
-+	$(CC) $(CFLAGS) -shared $(LDFLAGS) -Wl,-soname -Wl,$(LIBUTILSOMAJOR) -o $(LIBUTILSO) $(UOBJECTS) -L. -lgif
+-	$(CC) $(CFLAGS) $(CPPLAGS) -shared $(LDFLAGS) -Wl,-soname -Wl,$(LIBUTILSOMAJOR) -o $(LIBUTILSO) $(UOBJECTS)
++	$(CC) $(CFLAGS) $(CPPLAGS) -shared $(LDFLAGS) -Wl,-soname -Wl,$(LIBUTILSOMAJOR) -o $(LIBUTILSO) $(UOBJECTS) -L. -lgif
  endif
  
 -libutil.a: $(UOBJECTS) $(UHEADERS)
@@ -59,30 +62,28 @@
 +	$(AR) rcs libgifutil.a $(UOBJECTS)
  
  clean:
--	rm -f $(UTILS) $(TARGET) libgetarg.a libgif.a $(LIBGIFSO) libutil.a $(LIBUTILSO) *.o
-+	rm -f $(UTILS) $(TARGET) libgetarg.a libgif.a $(LIBGIFSO) libgifutil.a $(LIBUTILSO) *.o
- 	rm -f $(LIBGIFSOVER)
- 	rm -f $(LIBGIFSOMAJOR)
- 	rm -fr doc/*.1 *.html doc/staging
-@@ -141,12 +141,17 @@ install-bin: $(INSTALLABLE)
+ 	rm -f $(UTILS) $(OBSOLETE_UTILS) $(TARGET) libgetarg.a $(SHARED_LIBS) $(STATIC_LIBS) *.o
+@@ -178,14 +178,19 @@ install-bin: $(INSTALLABLE)
  install-include:
  	$(INSTALL) -d "$(DESTDIR)$(INCDIR)"
  	$(INSTALL) -m 644 gif_lib.h "$(DESTDIR)$(INCDIR)"
 +	$(INSTALL) -m 644 getarg.h "$(DESTDIR)$(INCDIR)/gif_util.h"
- install-lib:
+ install-static-lib:
  	$(INSTALL) -d "$(DESTDIR)$(LIBDIR)"
  	$(INSTALL) -m 644 libgif.a "$(DESTDIR)$(LIBDIR)/libgif.a"
++	$(INSTALL) -m 644 libgifutil.a "$(DESTDIR)$(LIBDIR)/libgifutil.a"
+ install-shared-lib:
+ 	$(INSTALL) -d "$(DESTDIR)$(LIBDIR)"
  	$(INSTALL) -m 755 $(LIBGIFSO) "$(DESTDIR)$(LIBDIR)/$(LIBGIFSOVER)"
  	ln -sf $(LIBGIFSOVER) "$(DESTDIR)$(LIBDIR)/$(LIBGIFSOMAJOR)"
  	ln -sf $(LIBGIFSOMAJOR) "$(DESTDIR)$(LIBDIR)/$(LIBGIFSO)"
-+	$(INSTALL) -m 644 libgifutil.a "$(DESTDIR)$(LIBDIR)/libgifutil.a"
 +	$(INSTALL) -m 755 libgifutil.so "$(DESTDIR)$(LIBDIR)/libgifutil.so.$(LIBVER)"
 +	ln -sf libgifutil.so.$(LIBVER) "$(DESTDIR)$(LIBDIR)/libgifutil.so.$(LIBMAJOR)"
 +	ln -sf libgifutil.so.$(LIBMAJOR) "$(DESTDIR)$(LIBDIR)/libgifutil.so"
+ install-lib: install-static-lib install-shared-lib
  install-man:
- 	$(INSTALL) -d "$(DESTDIR)$(MANDIR)/man1"
- 	$(INSTALL) -m 644 $(MANUAL_PAGES) "$(DESTDIR)$(MANDIR)/man1"
-@@ -158,6 +163,8 @@ uninstall-include:
+ 	$(INSTALL) -d "$(DESTDIR)$(MANDIR)/man1" "$(DESTDIR)$(MANDIR)/man7"
+@@ -206,6 +211,8 @@ uninstall-include:
  uninstall-lib:
  	cd "$(DESTDIR)$(LIBDIR)" && \
  		rm -f libgif.a $(LIBGIFSO) $(LIBGIFSOMAJOR) $(LIBGIFSOVER)
