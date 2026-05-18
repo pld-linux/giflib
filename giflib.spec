@@ -1,6 +1,7 @@
 #
 # Conditional build:
-%bcond_without	tests	# regression tests
+%bcond_without	static_libs	# static libraries
+%bcond_without	tests		# regression tests
 
 Summary:	GIF-manipulation library
 Summary(es.UTF-8):	Biblioteca de manipulación de archivos GIF
@@ -171,7 +172,11 @@ rm -rf $RPM_BUILD_ROOT
 
 cd $RPM_BUILD_ROOT%{_libdir}
 ln -sf libgif.so.*.*.* $RPM_BUILD_ROOT%{_libdir}/libungif.so
+%if %{with static_libs}
 ln -sf libgif.a $RPM_BUILD_ROOT%{_libdir}/libungif.a
+%else
+%{__rm} $RPM_BUILD_ROOT%{_libdir}/libgif*.a
+%endif
 
 # HTML version of man pages
 %{__rm} -r $RPM_BUILD_ROOT%{_docdir}/giflib
@@ -199,11 +204,13 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/gif_lib.h
 %{_includedir}/gif_util.h
 
+%if %{with static_libs}
 %files static
 %defattr(644,root,root,755)
 %{_libdir}/libgif.a
 %{_libdir}/libgifutil.a
 %{_libdir}/libungif.a
+%endif
 
 %files progs
 %defattr(644,root,root,755)
